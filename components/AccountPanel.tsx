@@ -7,7 +7,8 @@ import type { LastAnalysis } from "./Demo";
 
 type Tab = "ki" | "konto" | "log";
 
-const FUNNEL = ["💭 Inspiration", "❤️ Wunsch", "💰 Sparen", "✅ Entscheidung", "🔍 Suche", "✈️ Buchung"];
+const FUNNEL = ["💭 Inspiration", "❤️ Wunsch", "💰 Sparen", "🧭 Stöbern", "🔍 Suche", "✈️ Buchung"];
+const CHECK24_TODAY = 3; // ab „Stöbern“ ist CHECK24 heute schon stark
 
 export default function AccountPanel({
   profile,
@@ -64,20 +65,20 @@ function IdeeKI({ last }: { last: LastAnalysis | null }) {
         <span className="idea-kicker">Reel-to-Trip von CHECK24</span>
         <h2>„Boah, da will ich auch mal hin!“</h2>
         <p>
-          Genau in diesem Moment ist CHECK24 heute noch nicht dabei. Wer bei CHECK24 nach einer Reise sucht, hat sich innerlich längst entschieden.
-          Reel-to-Trip holt Kund:innen <strong>schon bei der Inspiration</strong> ab und nimmt die Emotion aus dem Feed mit: Reel teilen, Preis checken,
+          Viele Reisewünsche entstehen heute beim Scrollen durch Social Media, oft lange bevor jemand stöbert oder konkret sucht. Reel-to-Trip ist eine
+          Idee, wie CHECK24 <strong>schon in diesem Moment</strong> dabei sein könnte und die Emotion aus dem Feed mitnimmt: Reel teilen, Preis checken,
           auf die Bucket List, bis es ins Budget passt.
         </p>
         <div className="funnel-compare">
           {[
-            { label: "Heute", from: 4 },
-            { label: "Mit Reel-to-Trip", from: 0 },
+            { label: "Heute", early: false },
+            { label: "Mit Reel-to-Trip", early: true },
           ].map((row) => (
             <div key={row.label} className="fc-row">
               <span className="fc-label">{row.label}</span>
               <div className="fc-stages">
                 {FUNNEL.map((st, i) => (
-                  <span key={st} className={`fc-stage ${i >= row.from ? "c24" : ""} ${i === row.from ? "entry" : ""}`}>
+                  <span key={st} className={`fc-stage ${i >= CHECK24_TODAY ? "c24" : row.early ? "c24-new" : ""}`}>
                     {st}
                   </span>
                 ))}
@@ -85,7 +86,8 @@ function IdeeKI({ last }: { last: LastAnalysis | null }) {
             </div>
           ))}
           <p className="fc-note">
-            <i className="fc-dot" /> CHECK24 ist dabei. Früher Zugang = mehr Kontaktpunkte, Daten zu Wunschzielen und Buchungen, die sonst woanders landen.
+            <i className="fc-dot" /> CHECK24 heute
+            <i className="fc-dot new" /> möglicher zusätzlicher Einstieg über Social Media. Ergänzt den bestehenden Weg, ersetzt ihn nicht.
           </p>
         </div>
       </div>

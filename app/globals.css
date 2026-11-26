@@ -1888,7 +1888,7 @@ pre {
   color: var(--navy);
   font-weight: 700;
 }
-.fc-stage.entry {
+.fc-stage.entry-unused {
   box-shadow: 0 0 0 2px #fff;
 }
 .fc-note {
@@ -2179,4 +2179,18 @@ pre {
 }
 .reel-actions button {
   cursor: pointer;
+}
+
+/* v6: neue Einstiegspunkte im Funnel */
+.fc-stage.c24-new {
+  background: transparent;
+  color: var(--yellow);
+  font-weight: 700;
+  border: 1.5px dashed var(--yellow);
+  padding: 4.5px 1px;
+}
+.fc-dot.new {
+  background: transparent;
+  border: 1.5px dashed var(--yellow);
+  margin-left: 10px;
 }

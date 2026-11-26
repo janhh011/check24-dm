@@ -119,6 +119,7 @@ export default function ReelsFeed({
     const idx = Math.round(el.scrollTop / el.clientHeight);
     const v = el.querySelectorAll("video")[idx] as HTMLVideoElement | undefined;
     if (v) {
+      v.currentTime = 0;
       v.muted = false;
       v.play().catch(() => undefined);
     }
@@ -166,6 +167,7 @@ export default function ReelsFeed({
             onToast={onToast}
             disabled={disabled}
             coachShare={step === "share"}
+            hold={step === "intro"}
           />
         ))}
       </div>
@@ -258,6 +260,7 @@ function ReelItem({
   onToast,
   disabled,
   coachShare,
+  hold,
 }: {
   reel: Reel;
   muted: boolean;
@@ -268,22 +271,34 @@ function ReelItem({
   onToast: (t: string) => void;
   disabled: boolean;
   coachShare: boolean;
+  hold: boolean; // während der Einführung nicht abspielen
 }) {
   const ref = useRef<HTMLVideoElement>(null);
+  const visible = useRef(false);
+  const holdRef = useRef(hold);
+  holdRef.current = hold;
 
-  // Abspielen, sobald das Reel überwiegend sichtbar ist, wie im echten Feed
+  function playFromStart(v: HTMLVideoElement) {
+    if (v.currentTime > 0.05) v.currentTime = 0;
+    v.play().catch(() => {
+      // Browser blockiert Ton ohne Interaktion: stumm weiterspielen
+      v.muted = true;
+      v.play().catch(() => undefined);
+    });
+  }
+
+  // Abspielen, sobald das Reel überwiegend sichtbar wird, wie im echten Feed.
+  // Nur beim Übergang unsichtbar → sichtbar reagieren, sonst springt das Video kurz zurück.
   useEffect(() => {
     const v = ref.current;
     if (!v) return;
     const obs = new IntersectionObserver(
       ([e]) => {
-        if (e.intersectionRatio > 0.6) {
-          v.currentTime = 0;
-          v.play().catch(() => {
-            // Browser blockiert Ton ohne Interaktion: stumm weiterspielen
-            v.muted = true;
-            v.play().catch(() => undefined);
-          });
+        const nowVisible = e.intersectionRatio > 0.6;
+        if (nowVisible === visible.current) return;
+        visible.current = nowVisible;
+        if (nowVisible) {
+          if (!holdRef.current) playFromStart(v);
         } else v.pause();
       },
       { threshold: [0, 0.6, 1] },
@@ -292,13 +307,19 @@ function ReelItem({
     return () => obs.disconnect();
   }, []);
 
+  // Nach der Einführung: sichtbares Reel von Anfang an starten (falls start() es nicht schon getan hat)
+  useEffect(() => {
+    const v = ref.current;
+    if (v && !hold && visible.current && v.paused) playFromStart(v);
+  }, [hold]);
+
   useEffect(() => {
     if (ref.current) ref.current.muted = muted;
   }, [muted]);
 
   return (
     <div className="reel">
-      <video ref={ref} src={reel.video} poster={reel.poster} muted={muted} loop playsInline preload="metadata" onClick={onToggleMute} />
+      <video ref={ref} src={reel.video} poster={reel.poster} muted={muted} loop playsInline preload="auto" onClick={onToggleMute} />
       <div className="reel-actions">
         <button onClick={onLike} className={liked ? "liked" : ""}>
           <span>{liked ? "❤️" : "🤍"}</span>

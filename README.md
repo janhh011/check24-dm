@@ -1,13 +1,15 @@
 # Reel-to-Trip von CHECK24: Feature-Konzept & Prototyp
 
-> **„Boah, da will ich auch mal hin!“** In diesem Moment ist CHECK24 heute noch nicht dabei.
+> **„Boah, da will ich auch mal hin!“**
 
-Wer heute bei CHECK24 nach einer Reise sucht, hat sich innerlich schon entschieden. Die Inspiration davor passiert auf Social Media, oft Wochen oder Monate vorher und ohne CHECK24. **Reel-to-Trip verschiebt den Einstieg im Funnel nach vorne** und nimmt die Emotion aus dem Feed mit: Reel per DM an CHECK24 teilen, die KI erkennt das Ziel direkt aus dem Video, Preis checken, auf die Bucket List, bis es ins Budget passt. Dann kommt der Push, und gebucht wird bei CHECK24.
+Viele Reisewünsche entstehen heute beim Scrollen durch Social Media, oft lange bevor jemand stöbert oder konkret sucht. **Reel-to-Trip ist eine Idee, wie CHECK24 schon in diesem Moment dabei sein könnte**, und zwar mit der Emotion aus dem Feed: Reel per DM an CHECK24 teilen, die KI erkennt das Ziel direkt aus dem Video, Preis checken, auf die Bucket List, bis es ins Budget passt. Dann kommt der Push, und gebucht wird bei CHECK24.
 
 ```
-Heute:            Inspiration → Wunsch → Sparen → Entscheidung → [CHECK24: Suche → Buchung]
-Mit Reel-to-Trip: [CHECK24: Inspiration → Wunsch → Sparen → Entscheidung → Suche → Buchung]
+Heute:            Inspiration → Wunsch → Sparen → [CHECK24: Stöbern → Suche → Buchung]
+Mit Reel-to-Trip: [neu: Inspiration → Wunsch → Sparen] → [CHECK24: Stöbern → Suche → Buchung]
 ```
+
+Reel-to-Trip ergänzt den bestehenden Weg um einen früheren Einstieg, es ersetzt ihn nicht.
 
 > Inoffizielles Konzept von Jan-Hendrik Höltkemeier, keine CHECK24-Seite. **Echt** ist die KI: Bilder aus dem Video ziehen und das Ziel per Claude API erkennen (multimodal, Structured Outputs). **Simuliert** sind Social-App, Login, Preise und Hotelliste.
 
