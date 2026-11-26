@@ -15,14 +15,12 @@ export default function AccountPanel({
   bucket,
   log,
   last,
-  week,
   onOpenItem,
 }: {
   profile: UserProfile | null;
   bucket: BucketItem[];
   log: AnalyzeResponse[];
   last: LastAnalysis | null;
-  week: number;
   onOpenItem: (id: string) => void;
 }) {
   const [tab, setTab] = useState<Tab>("ki");
@@ -51,7 +49,7 @@ export default function AccountPanel({
 
       <div className="panel-body">
         {tab === "ki" && <IdeeKI last={last} />}
-        {tab === "konto" && <Konto profile={profile} bucket={bucket} week={week} onOpenItem={onOpenItem} />}
+        {tab === "konto" && <Konto profile={profile} bucket={bucket} onOpenItem={onOpenItem} />}
         {tab === "log" && <Log log={log} />}
       </div>
     </section>
@@ -190,7 +188,7 @@ function IdeeKI({ last }: { last: LastAnalysis | null }) {
 
 // ---------- Konto ----------
 
-function Konto({ profile, bucket, week, onOpenItem }: { profile: UserProfile | null; bucket: BucketItem[]; week: number; onOpenItem: (id: string) => void }) {
+function Konto({ profile, bucket, onOpenItem }: { profile: UserProfile | null; bucket: BucketItem[]; onOpenItem: (id: string) => void }) {
   return (
     <div>
       <div className="acct-head">
@@ -259,7 +257,7 @@ function Konto({ profile, bucket, week, onOpenItem }: { profile: UserProfile | n
             );
           })}
           <p className="muted small">
-            {week === 0 ? "Oben „1 Woche vorspulen“ simuliert die tägliche Preisbeobachtung." : `${week} Woche(n) Preisbeobachtung simuliert.`} Klick auf ein Ziel öffnet
+            Der Preis-Tracker beobachtet deine Ziele im Hintergrund. Klick auf ein Ziel öffnet
             die vorausgefüllte Suche.
           </p>
         </div>

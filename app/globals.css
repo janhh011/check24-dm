@@ -2525,3 +2525,8 @@ pre {
     gap: 12px;
   }
 }
+@media (max-width: 640px) {
+  .controls .btn-ghost {
+    margin-left: auto;
+  }
+}

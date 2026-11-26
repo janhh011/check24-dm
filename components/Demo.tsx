@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { extractFrames } from "@/lib/frames";
-import { DEFAULT_PROFILE, destinationKey, formatEUR, quoteOffer, simulateWeeks } from "@/lib/pricing";
+import { DEFAULT_PROFILE, destinationKey, formatEUR, quoteOffer } from "@/lib/pricing";
 import type { AnalyzeRequest, AnalyzeResponse, BucketItem, DestinationResult, Offer, Reel, UserProfile } from "@/lib/types";
 import AccountPanel from "./AccountPanel";
 import LoginSheet from "./LoginSheet";
@@ -48,7 +48,6 @@ export interface LastAnalysis {
   visuals: Visuals;
 }
 
-const DAY = 86_400_000;
 const FRAME_COUNT = 8;
 let idCounter = 0;
 const uid = (p = "m") => `${p}${Date.now().toString(36)}${(idCounter++).toString(36)}`;
@@ -76,8 +75,6 @@ export default function Demo() {
   const [deepLinkItem, setDeepLinkItem] = useState<string | null>(null);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [toast, setToast] = useState<string | null>(null);
-  const [simOffset, setSimOffset] = useState(0);
-  const [week, setWeek] = useState(0);
   const [coach, setCoach] = useState<CoachStep>("intro");
   const [feedKey, setFeedKey] = useState(0);
   const [unread, setUnread] = useState(0);
@@ -86,6 +83,11 @@ export default function Demo() {
   const pending = useRef<{ resultMsgId: string; withAlert: boolean } | null>(null);
   const results = useRef<Record<string, { result: DestinationResult; visuals: Visuals }>>({});
   const chatEnd = useRef<HTMLDivElement>(null);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const bucketRef = useRef(bucket);
+  bucketRef.current = bucket;
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
   const screenRef = useRef(screen);
   screenRef.current = screen;
 
@@ -265,7 +267,7 @@ export default function Demo() {
         id: itemId,
         result: entry.result,
         offer,
-        addedAt: Date.now() + simOffset,
+        addedAt: Date.now(),
         reelCaption: entry.visuals.caption,
         poster: entry.visuals.poster,
         emoji: entry.visuals.emoji,
@@ -299,7 +301,7 @@ export default function Demo() {
   }
 
   function setAlert(itemId: string, threshold: number) {
-    setBucket((prev) => prev.map((b) => (b.id === itemId ? { ...b, alert: { threshold, createdAt: Date.now() + simOffset } } : b)));
+    setBucket((prev) => prev.map((b) => (b.id === itemId ? { ...b, alert: { threshold, createdAt: Date.now() } } : b)));
     const item = bucket.find((b) => b.id === itemId);
     push({
       id: uid(),
@@ -310,6 +312,40 @@ export default function Demo() {
           ? `🔔 Abgemacht! Sobald ${item?.result.place ?? "dein Traumziel"} in dein Budget von ${formatEUR(threshold)} passt, bekommst du einen Push von der CHECK24-App. Bis dahin: weiter träumen 😉`
           : `🔔 Preisalarm aktiv! Ich melde mich per Push in der CHECK24-App, sobald ${item?.result.place ?? "das Ziel"} unter ${formatEUR(threshold)} fällt. Bis dahin: weiter scrollen 😉`,
     });
+    // Demo: Der Preis-Tracker „findet“ nach ein paar Sekunden ein passendes Angebot
+    const delay = 5000 + Math.random() * 5000;
+    timers.current.push(setTimeout(() => triggerAlert(itemId), delay));
+  }
+
+  function triggerAlert(itemId: string) {
+    const b = bucketRef.current.find((x) => x.id === itemId);
+    if (!b || !b.alert || b.alert.triggered) return;
+    const last = b.priceHistory[b.priceHistory.length - 1];
+    const drop = 10 + Math.round(Math.random() * 3) * 10; // 10 bis 40 € unter der Schwelle
+    const price = Math.min(last - 10, b.alert.threshold - drop);
+    // ein paar Zwischenstände für den Preisverlauf
+    const steps = [0.35, 0.7].map((f) => Math.round((last - (last - price) * f) / 10) * 10 - 1);
+    const pct = Math.round((1 - price / b.offer.pricePP) * 100);
+    const isBudget = profileRef.current && b.alert.threshold === profileRef.current.budget;
+    setBucket((prev) =>
+      prev.map((x) =>
+        x.id === itemId && x.alert
+          ? { ...x, priceHistory: [...x.priceHistory, ...steps, price], alert: { ...x.alert, triggered: { price, at: Date.now(), channel: "App-Push" } } }
+          : x,
+      ),
+    );
+    setToast(null);
+    setBanners((prev) => [
+      {
+        id: uid("n"),
+        itemId,
+        title: "CHECK24 Urlaub",
+        body: isBudget
+          ? `🎉 Dein Traumziel ${b.result.place} passt jetzt in dein Budget: ab ${formatEUR(price)} p. P. (−${pct} %). Jetzt ansehen!`
+          : `🔔 ${b.result.place} jetzt ab ${formatEUR(price)} p. P. (−${pct} %). Dein Preisalarm hat ausgelöst. Jetzt ansehen!`,
+      },
+      ...prev,
+    ]);
   }
 
   function onLoginDone(p: UserProfile) {
@@ -319,42 +355,6 @@ export default function Demo() {
     const pend = pending.current;
     pending.current = null;
     if (pend) setTimeout(() => addToBucket(pend.resultMsgId, p, pend.withAlert), 350);
-  }
-
-  // ---------- Simulation ----------
-
-  function fastForward() {
-    const newWeek = week + 1;
-    const newOffset = simOffset + 7 * DAY;
-    const nowSim = Date.now() + newOffset;
-    const newBanners: Banner[] = [];
-    const next = bucket.map((b) => {
-      const lastPrice = b.priceHistory[b.priceHistory.length - 1];
-      const [p] = simulateWeeks(lastPrice, b.offer.basePrice, 1, `${b.id}-${newWeek}`, !!b.alert && !b.alert.triggered);
-      const updated: BucketItem = { ...b, priceHistory: [...b.priceHistory, p] };
-      if (b.alert && !b.alert.triggered && p <= b.alert.threshold) {
-        updated.alert = { ...b.alert, triggered: { price: p, at: nowSim, channel: "App-Push" } };
-        const pct = Math.round((1 - p / b.offer.pricePP) * 100);
-        newBanners.push({
-          id: uid("n"),
-          itemId: b.id,
-          title: "CHECK24 Urlaub",
-          body:
-            profile && b.alert.threshold === profile.budget
-              ? `🎉 Dein Traumziel ${b.result.place} passt jetzt in dein Budget: ab ${formatEUR(p)} p. P. (−${pct} %). Jetzt ansehen!`
-              : `🔔 ${b.result.place} jetzt ab ${formatEUR(p)} p. P. (−${pct} %). Dein Preisalarm hat ausgelöst. Jetzt ansehen!`,
-        });
-      }
-      return updated;
-    });
-    setBucket(next);
-    setWeek(newWeek);
-    setSimOffset(newOffset);
-    if (newBanners.length) {
-      setToast(null);
-      setBanners((prev) => [...newBanners, ...prev]);
-    } else if (bucket.length) setToast(`Woche ${newWeek}: Preise aktualisiert, noch kein Alarm ausgelöst`);
-    else setToast("Noch nichts auf der Bucket List. Erst ein Reel teilen und speichern");
   }
 
   function reset() {
@@ -367,8 +367,8 @@ export default function Demo() {
     setScreen("feed");
     setCoach("intro");
     setFeedKey((k) => k + 1);
-    setSimOffset(0);
-    setWeek(0);
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
     setUnread(0);
     pending.current = null;
     lastReq.current = null;
@@ -400,11 +400,6 @@ export default function Demo() {
           <span className={`mode ${mode?.mode === "claude" ? "mode-live" : "mode-offline"}`}>
             {mode ? mode.mode === "claude" ? <>● KI live<span className="mode-model"> · {mode.model}</span></> : "● Offline-Modus" : "…"}
           </span>
-          <span className="simclock">📅 {week === 0 ? "Heute" : `+${week} Woche${week > 1 ? "n" : ""}`}</span>
-          <button className="btn btn-yellow" onClick={fastForward} title="Simuliert eine Woche Preisbeobachtung">
-            ⏩ <span className="lbl-long">1 Woche vorspulen</span>
-            <span className="lbl-short">+1 Woche</span>
-          </button>
           <button className="btn btn-ghost" onClick={reset}>
             ↺ <span className="lbl-long">Neu starten</span>
           </button>
@@ -522,7 +517,6 @@ export default function Demo() {
           bucket={bucket}
           log={log}
           last={last}
-          week={week}
           onOpenItem={openDeepLink}
         />
       </main>

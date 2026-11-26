@@ -85,23 +85,6 @@ export function quoteOffer(r: DestinationResult, profile: UserProfile = DEFAULT_
   };
 }
 
-/**
- * Simuliert die Preisentwicklung für ein paar Wochen (Random Walk mit leichtem Abwärtstrend,
- * damit in der Demo zuverlässig ein Alarm auslöst, wenn einer gesetzt ist).
- */
-export function simulateWeeks(current: number, base: number, weeks: number, seed: string, biasDown: boolean): number[] {
-  const out: number[] = [];
-  let p = current;
-  for (let w = 1; w <= weeks; w++) {
-    const r = (hash(`${seed}-${w}-${p}`) % 1000) / 1000; // 0..1
-    const drift = biasDown ? -0.11 : -0.01;
-    const change = drift + (r - 0.5) * 0.08; // mit Alarm ca. -15 % … -7 % pro Woche
-    p = Math.max(Math.round(base * 0.55), Math.round((p * (1 + change)) / 10) * 10 - 1);
-    out.push(p);
-  }
-  return out;
-}
-
 export function formatEUR(n: number): string {
   return new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 }

@@ -34,7 +34,7 @@ Die sechs Reels liegen fürs Web optimiert unter `public/reels/` (MP4 plus Poste
 3. **Der Moment:** Beim Shanghai-Reel (viertes Reel) denkt man „Boah, da will ich hin!“. Also auf **➤ Teilen** tippen, **check24** wählen, **Senden**.
 4. **KI bei der Arbeit:** Im Chat erscheinen live 8 Bilder aus dem Video. Die KI erkennt Shanghai an der Skyline (Oriental Pearl Tower, Shanghai Tower) und zeigt einen Preis. Rechts unter **Idee & KI** steht, woran sie das Ziel erkannt hat.
 5. **Bucket List statt Buchung:** *Auf Bucket List* tippen, Konto verbinden (Demo, Budget 800 €). Der Bot sagt, wie weit das Ziel noch über dem Budget liegt, dann **„Sobald’s in mein Budget passt“** wählen.
-6. **⏩ 1 Woche vorspulen** (2 bis 4 ×): Im Konto füllt sich der Budget-Balken, dann kommt der Push „Dein Traumziel passt jetzt in dein Budget“. Ein Klick öffnet die vorausgefüllte Suche.
+6. **Push:** Nach ein paar Sekunden meldet der Preis-Tracker ein passendes Angebot. Es kommt der Push „Dein Traumziel passt jetzt in dein Budget“, im Konto füllt sich der Budget-Balken. Ein Klick auf den Push öffnet die vorausgefüllte Suche.
 7. **Unklarer Fall:** Das England-Reel zeigt Orte in England, Wales und Schottland. Die KI merkt den Widerspruch zur Bildunterschrift und fragt nach.
 
 ## Wie die KI funktioniert
@@ -56,9 +56,9 @@ Reel ──▶ 8 Einzelbilder (Browser, <canvas>)  ─┐
 | `lib/claude.ts` | Prompt + JSON-Schema, multimodaler Aufruf |
 | `app/api/analyze/route.ts` | API-Route: Claude-Aufruf, Anfragelimit, Offline-Antwort |
 | `lib/fallback.ts` | Vorbereitete Antworten für den Offline-Modus |
-| `lib/pricing.ts` | Demo-Preise + Preis-Simulation |
+| `lib/pricing.ts` | Demo-Preise |
 | `components/ReelsFeed.tsx` | Reels-Feed mit Teilen-Funktion |
-| `components/Demo.tsx` | Chat-Logik, Konto, Vorspulen |
+| `components/Demo.tsx` | Chat-Logik, Konto, Preisalarm |
 | `components/AccountPanel.tsx` | Idee & KI, Bucket List, KI-Log |
 
 Im echten Produkt würde ein Worker die Bilder mit ffmpeg ziehen (mit Szenenwechsel-Erkennung) und zusätzlich den Ton transkribieren. Die Zuordnung zum Ziel liefe gegen das echte CHECK24-Inventar.
