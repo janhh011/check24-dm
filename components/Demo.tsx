@@ -19,7 +19,7 @@ export interface Visuals {
 
 type Chip =
   | { label: string; kind: "candidate"; value: string }
-  | { label: string; kind: "otherPlace" }
+  | { label: string; kind: "backToFeed" }
   | { label: string; kind: "threshold"; itemId: string; value: number }
   | { label: string; kind: "noAlert" };
 
@@ -78,9 +78,6 @@ export default function Demo() {
   const [toast, setToast] = useState<string | null>(null);
   const [simOffset, setSimOffset] = useState(0);
   const [week, setWeek] = useState(0);
-  const [input, setInput] = useState("");
-  const [attachment, setAttachment] = useState<string | null>(null);
-  const [awaitingHint, setAwaitingHint] = useState(false);
   const [coach, setCoach] = useState<CoachStep>("intro");
   const [feedKey, setFeedKey] = useState(0);
   const [unread, setUnread] = useState(0);
@@ -89,7 +86,6 @@ export default function Demo() {
   const pending = useRef<{ resultMsgId: string; withAlert: boolean } | null>(null);
   const results = useRef<Record<string, { result: DestinationResult; visuals: Visuals }>>({});
   const chatEnd = useRef<HTMLDivElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
   const screenRef = useRef(screen);
   screenRef.current = screen;
 
@@ -163,7 +159,6 @@ export default function Demo() {
 
   function handleResult(r: DestinationResult, visuals: Visuals) {
     if (r.status === "identified") {
-      setAwaitingHint(false);
       const id = uid("r");
       results.current[id] = { result: r, visuals };
       const offer = quoteOffer(r, profile ?? DEFAULT_PROFILE);
@@ -171,7 +166,6 @@ export default function Demo() {
       if (known) offer.pricePP = known.priceHistory[known.priceHistory.length - 1];
       push({ id, from: "bot", kind: "result", result: r, offer, visuals });
     } else if (r.status === "ambiguous") {
-      setAwaitingHint(true);
       push(
         { id: uid(), from: "bot", kind: "text", text: r.clarifyingQuestion || "Hmm, da bin ich mir nicht sicher 🤔 Welcher Ort ist es?" },
         {
@@ -180,18 +174,17 @@ export default function Demo() {
           kind: "chips",
           chips: [
             ...r.candidates.slice(0, 3).map((c) => ({ label: `${c.place}, ${c.country}`, kind: "candidate" as const, value: `${c.place}, ${c.country}` })),
-            { label: "✏️ Anderer Ort …", kind: "otherPlace" as const },
+            { label: "🎬 Weiter scrollen", kind: "backToFeed" as const },
           ],
         },
       );
     } else {
-      setAwaitingHint(false);
       push({
         id: uid(),
         from: "bot",
         kind: "text",
         text: "Sieht eher nach ’nem Tipp für zu Hause aus als nach Urlaub 😄 Schick mir gern ein Reel von einem Ort, an den du reisen willst!",
-      });
+      }, { id: uid("c"), from: "bot", kind: "chips", chips: [{ label: "🎬 Weiter scrollen", kind: "backToFeed" }] });
     }
   }
 
@@ -219,46 +212,14 @@ export default function Demo() {
     await analyze({ reelId: reel.id, caption: reel.caption, frames }, visuals, frames.length ? framesId : undefined);
   }
 
-  function sendInput() {
-    const text = input.trim();
-    if (busy || (!text && !attachment)) return;
-    if (attachment) push({ id: uid(), from: "user", kind: "image", src: attachment, text: text || undefined });
-    else push({ id: uid(), from: "user", kind: "text", text });
-
-    const visuals: Visuals = { caption: text || "Screenshot", emoji: "📍", poster: attachment ?? undefined };
-    if (awaitingHint && lastReq.current && !attachment) {
-      analyze({ ...lastReq.current.req, userHint: text }, lastReq.current.visuals);
-    } else if (/^https?:\/\//i.test(text)) {
-      analyze({ url: text }, visuals);
-    } else {
-      analyze({ caption: text || undefined, imageBase64: attachment ?? undefined }, visuals);
-    }
-    setInput("");
-    setAttachment(null);
-  }
-
-  function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    if (f.size > 4_500_000) {
-      setToast("Bild ist zu groß (max. 4,5 MB)");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => setAttachment(String(reader.result));
-    reader.readAsDataURL(f);
-    e.target.value = "";
-  }
-
   function onChip(msgId: string, chip: Chip) {
     if (busy) return;
     markUsed(msgId);
     if (chip.kind === "candidate") {
       push({ id: uid(), from: "user", kind: "text", text: chip.label });
       if (lastReq.current) analyze({ ...lastReq.current.req, userHint: chip.value }, lastReq.current.visuals);
-    } else if (chip.kind === "otherPlace") {
-      setAwaitingHint(true);
-      push({ id: uid(), from: "bot", kind: "text", text: "Klar! Schreib mir einfach, wo das ist." });
+    } else if (chip.kind === "backToFeed") {
+      setScreen("feed");
     } else if (chip.kind === "threshold") {
       push({ id: uid(), from: "user", kind: "text", text: chip.label });
       setAlert(chip.itemId, chip.value);
@@ -270,19 +231,11 @@ export default function Demo() {
     }
   }
 
-  function onResultAction(msgId: string, action: "save" | "alert" | "wrong") {
+  function onResultAction(msgId: string, action: "save" | "alert") {
     if (busy) return;
     const entry = results.current[msgId];
     if (!entry) return;
     markUsed(msgId);
-    if (action === "wrong") {
-      setAwaitingHint(true);
-      push(
-        { id: uid(), from: "user", kind: "text", text: "Falscher Ort" },
-        { id: uid(), from: "bot", kind: "text", text: "Ups, sorry! 🙈 Wo ist das denn? Schreib mir den Ort, dann korrigiere ich’s." },
-      );
-      return;
-    }
     push({ id: uid(), from: "user", kind: "text", text: action === "save" ? "Auf Bucket List ⭐" : "Preisalarm setzen 🔔" });
     if (!profile) {
       pending.current = { resultMsgId: msgId, withAlert: action === "alert" };
@@ -416,9 +369,6 @@ export default function Demo() {
     setFeedKey((k) => k + 1);
     setSimOffset(0);
     setWeek(0);
-    setAwaitingHint(false);
-    setInput("");
-    setAttachment(null);
     setUnread(0);
     pending.current = null;
     lastReq.current = null;
@@ -518,32 +468,6 @@ export default function Demo() {
                     <div ref={chatEnd} />
                   </div>
 
-                  <div className="composer">
-                    {attachment && (
-                      <div className="attach-preview">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={attachment} alt="Anhang" />
-                        <button onClick={() => setAttachment(null)}>✕</button>
-                      </div>
-                    )}
-                    <div className="composer-row">
-                      <button className="icon-btn" onClick={() => fileRef.current?.click()} title="Screenshot anhängen" disabled={busy}>
-                        📎
-                      </button>
-                      <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={onFile} />
-                      <input
-                        className="text-in"
-                        value={input}
-                        placeholder={awaitingHint ? "Wo ist das? z. B. „Canterbury“" : "Nachricht, Link oder Bildunterschrift …"}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && sendInput()}
-                        disabled={busy}
-                      />
-                      <button className="send" onClick={sendInput} disabled={busy || (!input.trim() && !attachment)}>
-                        ➤
-                      </button>
-                    </div>
-                  </div>
                 </div>
               )}
             </div>
@@ -598,7 +522,7 @@ function MessageView({
 }: {
   m: Msg;
   onChip: (id: string, c: Chip) => void;
-  onResultAction: (id: string, a: "save" | "alert" | "wrong") => void;
+  onResultAction: (id: string, a: "save" | "alert") => void;
   onConnect: () => void;
   busy: boolean;
   profile: UserProfile | null;
@@ -749,9 +673,6 @@ function MessageView({
             </button>
             <button className="btn btn-yellow small" disabled={m.used || busy} onClick={() => onResultAction(m.id, "alert")}>
               🔔 Preisalarm
-            </button>
-            <button className="btn btn-ghost small" disabled={m.used || busy} onClick={() => onResultAction(m.id, "wrong")}>
-              Falscher Ort
             </button>
           </div>
         </div>
