@@ -39,6 +39,59 @@ export default function ReelsFeed({
   const [cycles, setCycles] = useState(2);
   const feedRef = useRef<HTMLDivElement>(null);
   const lastIndex = useRef(0);
+  const drag = useRef<{ startY: number; startTop: number; startIdx: number; moved: boolean; t0: number } | null>(null);
+  const suppressClick = useRef(false);
+
+  // Mit gedrückter linker Maustaste ziehen, wie Wischen auf dem Handy.
+  // Zwei-Finger-Scrollen auf dem Trackpad bleibt unverändert (natives Scrollen).
+  function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.pointerType !== "mouse" || e.button !== 0) return;
+    const el = feedRef.current;
+    if (!el) return;
+    drag.current = { startY: e.clientY, startTop: el.scrollTop, startIdx: Math.round(el.scrollTop / el.clientHeight), moved: false, t0: Date.now() };
+
+    const move = (ev: PointerEvent) => {
+      const d = drag.current;
+      if (!d) return;
+      const dy = ev.clientY - d.startY;
+      if (!d.moved && Math.abs(dy) > 6) {
+        d.moved = true;
+        el.style.scrollSnapType = "none";
+        el.style.cursor = "grabbing";
+      }
+      if (d.moved) {
+        ev.preventDefault();
+        el.scrollTop = d.startTop - dy;
+      }
+    };
+    const up = (ev: PointerEvent) => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      const d = drag.current;
+      drag.current = null;
+      if (!d || !d.moved) return;
+      suppressClick.current = true;
+      setTimeout(() => (suppressClick.current = false), 50);
+      const dy = ev.clientY - d.startY;
+      const fast = Math.abs(dy) / Math.max(1, Date.now() - d.t0) > 0.4; // schneller Wisch
+      let target = d.startIdx;
+      if (dy < -el.clientHeight * 0.15 || (fast && dy < -20)) target = d.startIdx + 1;
+      else if (dy > el.clientHeight * 0.15 || (fast && dy > 20)) target = Math.max(0, d.startIdx - 1);
+      el.style.cursor = "";
+      el.scrollTo({ top: target * el.clientHeight, behavior: "smooth" });
+      setTimeout(() => (el.style.scrollSnapType = ""), 450);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  }
+
+  // Klick nach einem Zieh-Vorgang nicht als Klick werten (z. B. Ton umschalten, Teilen)
+  function onClickCapture(e: React.MouseEvent) {
+    if (suppressClick.current) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }
 
   // Wurde die Einführung schon durchlaufen (z. B. beim Zurückkehren in den Feed), direkt mit Ton starten
   useEffect(() => {
@@ -100,7 +153,7 @@ export default function ReelsFeed({
         </button>
       </div>
 
-      <div className="feed" ref={feedRef} onScroll={onScroll}>
+      <div className="feed" ref={feedRef} onScroll={onScroll} onPointerDown={onPointerDown} onClickCapture={onClickCapture} onDragStart={(e) => e.preventDefault()}>
         {items.map(({ reel, key }) => (
           <ReelItem
             key={key}
@@ -259,9 +312,6 @@ function ReelItem({
           {coachShare && <span className="coach-bubble left">Da will ich hin? Hier teilen!</span>}
           <span className="share-icon">➤</span>
           <small>Teilen</small>
-        </button>
-        <button onClick={() => onToast("Gespeichert. Aber gebucht wird so nie 😉")}>
-          <span>🔖</span>
         </button>
       </div>
       <div className="reel-meta">

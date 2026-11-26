@@ -2167,3 +2167,16 @@ pre {
 .contacts {
   margin-top: 40px;
 }
+
+/* v5: Ziehen mit der Maus */
+.feed {
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.feed video {
+  -webkit-user-drag: none;
+}
+.reel-actions button {
+  cursor: pointer;
+}

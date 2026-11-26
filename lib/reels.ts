@@ -33,16 +33,6 @@ export const DEMO_REELS: Reel[] = [
     emoji: "🚙",
   },
   {
-    id: "england",
-    creator: "@wanderlust.uk",
-    caption: "Places that don’t feel real in England 😨 #travel #nature #england #uk",
-    video: "/reels/england.mp4",
-    poster: "/reels/england.jpg",
-    likes: "98k",
-    comments: "2.016",
-    emoji: "🏰",
-  },
-  {
     id: "rio",
     creator: "@longwayfromhome",
     caption: "This is Brazil 🇧🇷 | Living in Rio de Janeiro",
@@ -61,6 +51,16 @@ export const DEMO_REELS: Reel[] = [
     likes: "23k",
     comments: "312",
     emoji: "🏛️",
+  },
+  {
+    id: "england",
+    creator: "@wanderlust.uk",
+    caption: "Places that don’t feel real in England 😨 #travel #nature #england #uk",
+    video: "/reels/england.mp4",
+    poster: "/reels/england.jpg",
+    likes: "98k",
+    comments: "2.016",
+    emoji: "🏰",
   },
 ];
 
