@@ -468,6 +468,16 @@ export default function Demo() {
                     <div ref={chatEnd} />
                   </div>
 
+                  {/* Nur Optik wie im echten Messenger, in der Demo nicht benutzbar */}
+                  <div className="ig-composer" aria-hidden onClick={() => setToast("In der Demo antwortest du über die Buttons im Chat")}>
+                    <span className="ig-cam">📷</span>
+                    <span className="ig-placeholder">Nachricht …</span>
+                    <span className="ig-icons">
+                      <span>🎙️</span>
+                      <span>🖼️</span>
+                      <span>🙂</span>
+                    </span>
+                  </div>
                 </div>
               )}
             </div>

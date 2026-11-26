@@ -2199,3 +2199,40 @@ pre {
 .chat-screen .chat {
   padding-bottom: 14px;
 }
+
+/* v8: Messenger-Eingabeleiste (nur Optik) */
+.ig-composer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 10px 10px;
+  padding: 5px 12px 5px 5px;
+  border-radius: 99px;
+  background: #f0f2f5;
+  cursor: default;
+  user-select: none;
+}
+.ig-cam {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b6ff5, #8a3df5);
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.ig-placeholder {
+  flex: 1;
+  color: #8a909a;
+  font-size: 14px;
+}
+.ig-icons {
+  display: flex;
+  gap: 10px;
+  font-size: 17px;
+  opacity: 0.75;
+}
+.toast {
+  bottom: 130px;
+}
