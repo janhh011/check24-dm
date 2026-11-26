@@ -55,7 +55,7 @@ export const DEMO_REELS: Reel[] = [
   {
     id: "athen",
     creator: "@zwei.unterwegs",
-    caption: "ATHEN mini-Vlog – ein Tag in Griechenlands Hauptstadt 🇬🇷",
+    caption: "ATHEN mini-Vlog: ein Tag in Griechenlands Hauptstadt 🇬🇷",
     video: "/reels/athen.mp4",
     poster: "/reels/athen.jpg",
     likes: "23k",

@@ -72,7 +72,7 @@ export async function POST(request: Request) {
       input.imageUrl = meta.thumbnail;
       note = "TikTok-oEmbed: Bildunterschrift + Vorschaubild geladen";
     } else {
-      note = "TikTok-oEmbed nicht erreichbar – nur Link-Text ausgewertet";
+      note = "TikTok-oEmbed nicht erreichbar, nur Link-Text ausgewertet";
     }
   }
 
@@ -97,10 +97,10 @@ export async function POST(request: Request) {
       return NextResponse.json(res);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      note = `Claude-Aufruf fehlgeschlagen (${msg.slice(0, 120)}) – Offline-Antwort genutzt`;
+      note = `Claude-Aufruf fehlgeschlagen (${msg.slice(0, 120)}), Offline-Antwort genutzt`;
     }
   } else if (process.env.ANTHROPIC_API_KEY) {
-    note = "Anfragelimit für diese Demo erreicht – Offline-Antwort genutzt";
+    note = "Anfragelimit für diese Demo erreicht, Offline-Antwort genutzt";
   } else {
     note = note ? `${note} · kein API-Key → Offline-Modus` : "Kein API-Key gesetzt → Offline-Modus";
   }

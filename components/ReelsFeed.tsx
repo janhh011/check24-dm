@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { DEMO_REELS } from "@/lib/reels";
 import type { Reel } from "@/lib/types";
 
+export type CoachStep = "intro" | "swipe" | "share" | "pickContact" | "done";
+
 const CONTACTS = [
   { id: "check24", name: "check24", avatar: "C24", active: true },
   { id: "lisa", name: "lisa.m", avatar: "L", active: false },
@@ -13,41 +15,81 @@ const CONTACTS = [
   { id: "sara", name: "sara_k", avatar: "S", active: false },
 ];
 
-/** Vertikaler Reels-Feed im gewohnten Scroll-Format mit Teilen-Funktion. */
-export default function ReelsFeed({ onShare, onToast, disabled }: { onShare: (r: Reel) => void; onToast: (t: string) => void; disabled: boolean }) {
-  const [muted, setMuted] = useState(true);
+/**
+ * Vertikaler Reels-Feed im gewohnten Scroll-Format, endlos (nach dem letzten Reel kommt wieder das erste),
+ * mit Ton, Teilen-Funktion und einer kurzen Einführung für die Bedienung des Prototyps.
+ */
+export default function ReelsFeed({
+  onShare,
+  onToast,
+  disabled,
+  step,
+  onStep,
+}: {
+  onShare: (r: Reel) => void;
+  onToast: (t: string) => void;
+  disabled: boolean;
+  step: CoachStep;
+  onStep: (s: CoachStep) => void;
+}) {
+  const [muted, setMuted] = useState(true); // bis zum Klick auf „Los geht’s“ (Browser erlauben Ton erst nach einer Interaktion)
   const [liked, setLiked] = useState<Record<string, boolean>>({});
   const [shareFor, setShareFor] = useState<Reel | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
-  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+  const [cycles, setCycles] = useState(2);
+  const feedRef = useRef<HTMLDivElement>(null);
+  const lastIndex = useRef(0);
 
-  // Video abspielen, sobald es überwiegend sichtbar ist – wie im echten Feed
+  // Wurde die Einführung schon durchlaufen (z. B. beim Zurückkehren in den Feed), direkt mit Ton starten
   useEffect(() => {
-    const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          const v = e.target as HTMLVideoElement;
-          if (e.intersectionRatio > 0.6) v.play().catch(() => undefined);
-          else v.pause();
-        });
-      },
-      { threshold: [0, 0.6, 1] },
-    );
-    Object.values(videoRefs.current).forEach((v) => v && obs.observe(v));
-    return () => obs.disconnect();
-  }, []);
+    if (step !== "intro") setMuted(false);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    Object.values(videoRefs.current).forEach((v) => v && (v.muted = muted));
-  }, [muted]);
+  // Endlos-Feed: Kommt man ans Ende, wird die Liste noch einmal angehängt
+  function onScroll() {
+    const el = feedRef.current;
+    if (!el) return;
+    if (el.scrollTop + el.clientHeight * 3 > el.scrollHeight) setCycles((c) => c + 1);
+    const idx = Math.round(el.scrollTop / el.clientHeight);
+    if (idx !== lastIndex.current) {
+      lastIndex.current = idx;
+      if (step === "swipe") onStep("share");
+    }
+  }
+
+  function start() {
+    setMuted(false);
+    onStep("swipe");
+    // Im Klick-Handler starten, damit der Browser den Ton erlaubt
+    const el = feedRef.current;
+    if (!el) return;
+    const idx = Math.round(el.scrollTop / el.clientHeight);
+    const v = el.querySelectorAll("video")[idx] as HTMLVideoElement | undefined;
+    if (v) {
+      v.muted = false;
+      v.play().catch(() => undefined);
+    }
+  }
+
+  function openShare(r: Reel) {
+    if (disabled) return;
+    setShareFor(r);
+    if (step === "share" || step === "swipe") onStep("pickContact");
+  }
 
   function send() {
     if (!shareFor || picked !== "check24") return;
     const r = shareFor;
     setShareFor(null);
     setPicked(null);
+    if (step !== "done") onStep("done");
     onShare(r);
   }
+
+  const items = Array.from({ length: cycles * DEMO_REELS.length }, (_, i) => ({
+    reel: DEMO_REELS[i % DEMO_REELS.length],
+    key: `${Math.floor(i / DEMO_REELS.length)}-${i}`,
+  }));
 
   return (
     <div className="feed-wrap">
@@ -57,50 +99,60 @@ export default function ReelsFeed({ onShare, onToast, disabled }: { onShare: (r:
           {muted ? "🔇" : "🔊"}
         </button>
       </div>
-      <div className="feed">
-        {DEMO_REELS.map((r) => (
-          <div key={r.id} className="reel">
-            <video
-              ref={(el) => {
-                videoRefs.current[r.id] = el;
-              }}
-              src={r.video}
-              poster={r.poster}
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              onClick={() => setMuted((m) => !m)}
-            />
-            <div className="reel-actions">
-              <button onClick={() => setLiked((l) => ({ ...l, [r.id]: !l[r.id] }))} className={liked[r.id] ? "liked" : ""}>
-                <span>{liked[r.id] ? "❤️" : "🤍"}</span>
-                <small>{r.likes}</small>
-              </button>
-              <button onClick={() => onToast("Kommentare sind in der Demo deaktiviert")}>
-                <span>💬</span>
-                <small>{r.comments}</small>
-              </button>
-              <button className="share-btn" onClick={() => !disabled && setShareFor(r)} disabled={disabled}>
-                <span>➤</span>
-                <small>Teilen</small>
-              </button>
-              <button onClick={() => onToast("Gespeichert – aber gebucht wird so nie 😉")}>
-                <span>🔖</span>
-              </button>
-            </div>
-            <div className="reel-meta">
-              <div className="reel-creator-row">
-                <span className="mini-avatar">{r.creator.slice(1, 2).toUpperCase()}</span>
-                <strong>{r.creator}</strong>
-                <span className="follow">Folgen</span>
-              </div>
-              <p>{r.caption}</p>
-              <span className="audio">♫ Originalton · {r.creator}</span>
-            </div>
-          </div>
+
+      <div className="feed" ref={feedRef} onScroll={onScroll}>
+        {items.map(({ reel, key }) => (
+          <ReelItem
+            key={key}
+            reel={reel}
+            muted={muted}
+            liked={!!liked[reel.id]}
+            onLike={() => setLiked((l) => ({ ...l, [reel.id]: !l[reel.id] }))}
+            onToggleMute={() => setMuted((m) => !m)}
+            onShare={() => openShare(reel)}
+            onToast={onToast}
+            disabled={disabled}
+            coachShare={step === "share"}
+          />
         ))}
       </div>
+
+      {step === "intro" && (
+        <div className="coach-intro">
+          <div className="coach-card">
+            <span className="coach-kicker">Prototyp · so geht’s</span>
+            <h3>Vom Reel zur Reise</h3>
+            <ol>
+              <li>
+                <b>👆</b>
+                <span>Wische durch die Reels, wie du es gewohnt bist.</span>
+              </li>
+              <li>
+                <b>➤</b>
+                <span>
+                  Traumziel entdeckt? Tippe auf <strong>Teilen</strong>.
+                </span>
+              </li>
+              <li>
+                <b>💬</b>
+                <span>
+                  Schick das Reel an <strong>check24</strong>. Den Rest macht die KI.
+                </span>
+              </li>
+            </ol>
+            <button className="btn btn-yellow wide" onClick={start}>
+              Los geht’s 🔊
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step === "swipe" && (
+        <div className="coach-swipe" aria-hidden>
+          <span className="swipe-hand">👆</span>
+          <span className="swipe-text">Nach oben wischen</span>
+        </div>
+      )}
 
       {shareFor && (
         <div className="share-sheet-bg" onClick={() => setShareFor(null)}>
@@ -108,29 +160,119 @@ export default function ReelsFeed({ onShare, onToast, disabled }: { onShare: (r:
             <div className="grabber" />
             <div className="share-search">🔍 Suchen</div>
             <div className="contacts">
-              {CONTACTS.map((c) => (
-                <button
-                  key={c.id}
-                  className={`contact ${picked === c.id ? "picked" : ""} ${c.active ? "" : "inactive"}`}
-                  onClick={() => (c.active ? setPicked(picked === c.id ? null : c.id) : onToast("In der Demo ist nur check24 aktiv"))}
-                >
-                  <span className={`contact-avatar ${c.id === "check24" ? "brand" : ""}`}>
-                    {c.avatar}
-                    {picked === c.id && <i>✓</i>}
-                  </span>
-                  <small>
-                    {c.name}
-                    {c.id === "check24" && <b className="verified"> ✔</b>}
-                  </small>
-                </button>
-              ))}
+              {CONTACTS.map((c) => {
+                const coach = step === "pickContact" && c.id === "check24" && !picked;
+                return (
+                  <button
+                    key={c.id}
+                    className={`contact ${picked === c.id ? "picked" : ""} ${c.active ? "" : "inactive"} ${coach ? "coach-target" : ""}`}
+                    onClick={() => (c.active ? setPicked(picked === c.id ? null : c.id) : onToast("In der Demo ist nur check24 aktiv"))}
+                  >
+                    {coach && <span className="coach-bubble up">check24 auswählen</span>}
+                    <span className={`contact-avatar ${c.id === "check24" ? "brand" : ""}`}>
+                      {c.avatar}
+                      {picked === c.id && <i>✓</i>}
+                    </span>
+                    <small>
+                      {c.name}
+                      {c.id === "check24" && <b className="verified"> ✔</b>}
+                    </small>
+                  </button>
+                );
+              })}
             </div>
-            <button className="btn btn-blue wide" disabled={picked !== "check24"} onClick={send}>
+            <button
+              className={`btn btn-blue wide ${step === "pickContact" && picked === "check24" ? "coach-pulse" : ""}`}
+              disabled={picked !== "check24"}
+              onClick={send}
+            >
               Senden
             </button>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ReelItem({
+  reel,
+  muted,
+  liked,
+  onLike,
+  onToggleMute,
+  onShare,
+  onToast,
+  disabled,
+  coachShare,
+}: {
+  reel: Reel;
+  muted: boolean;
+  liked: boolean;
+  onLike: () => void;
+  onToggleMute: () => void;
+  onShare: () => void;
+  onToast: (t: string) => void;
+  disabled: boolean;
+  coachShare: boolean;
+}) {
+  const ref = useRef<HTMLVideoElement>(null);
+
+  // Abspielen, sobald das Reel überwiegend sichtbar ist, wie im echten Feed
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        if (e.intersectionRatio > 0.6) {
+          v.currentTime = 0;
+          v.play().catch(() => {
+            // Browser blockiert Ton ohne Interaktion: stumm weiterspielen
+            v.muted = true;
+            v.play().catch(() => undefined);
+          });
+        } else v.pause();
+      },
+      { threshold: [0, 0.6, 1] },
+    );
+    obs.observe(v);
+    return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (ref.current) ref.current.muted = muted;
+  }, [muted]);
+
+  return (
+    <div className="reel">
+      <video ref={ref} src={reel.video} poster={reel.poster} muted={muted} loop playsInline preload="metadata" onClick={onToggleMute} />
+      <div className="reel-actions">
+        <button onClick={onLike} className={liked ? "liked" : ""}>
+          <span>{liked ? "❤️" : "🤍"}</span>
+          <small>{reel.likes}</small>
+        </button>
+        <button onClick={() => onToast("Kommentare sind in der Demo deaktiviert")}>
+          <span>💬</span>
+          <small>{reel.comments}</small>
+        </button>
+        <button className={`share-btn ${coachShare ? "coach-target" : ""}`} onClick={onShare} disabled={disabled}>
+          {coachShare && <span className="coach-bubble left">Da will ich hin? Hier teilen!</span>}
+          <span className="share-icon">➤</span>
+          <small>Teilen</small>
+        </button>
+        <button onClick={() => onToast("Gespeichert. Aber gebucht wird so nie 😉")}>
+          <span>🔖</span>
+        </button>
+      </div>
+      <div className="reel-meta">
+        <div className="reel-creator-row">
+          <span className="mini-avatar">{reel.creator.slice(1, 2).toUpperCase()}</span>
+          <strong>{reel.creator}</strong>
+          <span className="follow">Folgen</span>
+        </div>
+        <p>{reel.caption}</p>
+        <span className="audio">♫ Originalton · {reel.creator}</span>
+      </div>
     </div>
   );
 }

@@ -33,7 +33,7 @@ const PRESETS: Record<string, DestinationResult> = {
     confidence: 0.98,
     signals: ["Texteinblendungen „Caló des Moro“, „Valldemossa“, „Deià“, „Sóller“", "Hashtags #mallorca #spaintravel", "türkise Buchten, Natursteindörfer"],
     spots: ["Caló des Moro", "Valldemossa", "Deià", "Sóller", "Restaurant Illeta", "Gran Folies Beach Club"],
-    teaser: "Türkise Buchten, Bergdörfer und die Holzbahn nach Sóller – Mallorca kann so viel mehr als Ballermann.",
+    teaser: "Türkise Buchten, Bergdörfer und die Holzbahn nach Sóller: Mallorca kann so viel mehr als Ballermann.",
   },
   shanghai: {
     ...base,
@@ -47,7 +47,7 @@ const PRESETS: Record<string, DestinationResult> = {
     confidence: 0.97,
     signals: ["Oriental Pearl Tower im Bild", "Shanghai Tower + World Financial Center", "Bildunterschrift nennt Shanghai"],
     spots: ["Oriental Pearl Tower", "Shanghai Tower", "The Bund", "Yan’an-Hochstraße"],
-    teaser: "Neon-Skyline am Huangpu – Shanghai fühlt sich wirklich an wie 2088. 🌃",
+    teaser: "Neon-Skyline am Huangpu: Shanghai fühlt sich wirklich an wie 2088. 🌃",
   },
   albanien: {
     ...base,
@@ -61,7 +61,7 @@ const PRESETS: Record<string, DestinationResult> = {
     confidence: 0.86,
     signals: ["Texteinblendung „Reise nach ALBANIEN“", "albanisches Kennzeichen", "Küstenpanorama, Kiesstrand, Wasserfall"],
     spots: ["Llogara-Pass", "Kiesstrände am Ionischen Meer", "Wasserfall in der Schlucht"],
-    teaser: "Wilde Küste, Bergstraßen und leere Strände – Albanien ist Roadtrip-Abenteuer pur. 🚙",
+    teaser: "Wilde Küste, Bergstraßen und leere Strände: Albanien ist Roadtrip-Abenteuer pur. 🚙",
   },
   england: {
     ...base,
@@ -70,14 +70,14 @@ const PRESETS: Record<string, DestinationResult> = {
     countryCode: "GB",
     tripType: "Mix",
     confidence: 0.55,
-    signals: ["Texteinblendung „England“", "Fachwerkhäuser + Stocherkähne (Canterbury?)", "Staudamm wirkt wie Elan Valley – das wäre Wales", "Mehrere Orte in einem Video"],
+    signals: ["Texteinblendung „England“", "Fachwerkhäuser + Stocherkähne (Canterbury?)", "Staudamm wirkt wie Elan Valley, das wäre Wales", "Mehrere Orte in einem Video"],
     spots: ["Canterbury", "Elan Valley (Wales)", "Gotisches Universitätsgebäude"],
     candidates: [
       { place: "Canterbury", country: "England" },
       { place: "Elan Valley", country: "Wales" },
       { place: "Cotswolds", country: "England" },
     ],
-    clarifyingQuestion: "Das Video zeigt mehrere Orte – und nicht alle liegen in England 😉 Welcher hat’s dir angetan?",
+    clarifyingQuestion: "Das Video zeigt mehrere Orte, und nicht alle liegen in England 😉 Welcher hat’s dir angetan?",
   },
   rio: {
     ...base,
@@ -91,7 +91,7 @@ const PRESETS: Record<string, DestinationResult> = {
     confidence: 0.96,
     signals: ["Morro Dois Irmãos hinter dem Strand (Ipanema)", "Christusstatue", "Brasilien-Flagge im Text"],
     spots: ["Ipanema", "Morro Dois Irmãos", "Christus der Erlöser", "Rocinha"],
-    teaser: "Fußball am Strand, Sonnenuntergang über Ipanema – Rio lebt draußen. 🇧🇷",
+    teaser: "Fußball am Strand, Sonnenuntergang über Ipanema: Rio lebt draußen. 🇧🇷",
   },
   athen: {
     ...base,
@@ -105,7 +105,7 @@ const PRESETS: Record<string, DestinationResult> = {
     confidence: 0.98,
     signals: ["Parthenon und Propyläen", "Texteinblendung „Akropolis“", "Athener Metro + Markthalle"],
     spots: ["Akropolis", "Parthenon", "Zentrale Markthalle", "Plaka"],
-    teaser: "Morgens Akropolis, mittags Markthalle, abends Plaka – Athen ist der perfekte Städtetrip. 🏛️",
+    teaser: "Morgens Akropolis, mittags Markthalle, abends Plaka. Athen ist der perfekte Städtetrip. 🏛️",
   },
 };
 
@@ -122,7 +122,7 @@ const CANDIDATE_PRESETS: Record<string, DestinationResult> = {
     confidence: 0.85,
     signals: ["Nutzer-Auswahl", "Fachwerkhäuser und Stocherkähne am Fluss Stour"],
     spots: ["Canterbury Cathedral", "Stocherkahnfahrt auf dem Stour"],
-    teaser: "Fachwerk, Blumen und Stocherkähne – Canterbury ist England wie aus dem Bilderbuch.",
+    teaser: "Fachwerk, Blumen und Stocherkähne: Canterbury ist England wie aus dem Bilderbuch.",
   },
   "elan valley": {
     ...base,
@@ -136,7 +136,7 @@ const CANDIDATE_PRESETS: Record<string, DestinationResult> = {
     confidence: 0.8,
     signals: ["Nutzer-Auswahl", "viktorianische Staumauern mit Überlauf"],
     spots: ["Caban-Coch-Damm", "Craig-Goch-Damm"],
-    teaser: "Viktorianische Staudämme mitten in grünen Hügeln – Wales von seiner wildesten Seite.",
+    teaser: "Viktorianische Staudämme mitten in grünen Hügeln. Wales von seiner wildesten Seite.",
   },
 };
 

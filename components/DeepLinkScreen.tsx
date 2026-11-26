@@ -88,7 +88,7 @@ export default function DeepLinkScreen({
           </div>
         ))}
       </div>
-      <p className="fineprint center">Demo-Daten – im Produkt: echte Ergebnisliste der CHECK24-Suche</p>
+      <p className="fineprint center">Demo-Daten. Im Produkt: echte Ergebnisliste der CHECK24-Suche</p>
     </div>
   );
 }

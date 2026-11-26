@@ -7,7 +7,7 @@ import type { AnalyzeRequest, AnalyzeResponse, BucketItem, DestinationResult, Of
 import AccountPanel from "./AccountPanel";
 import LoginSheet from "./LoginSheet";
 import DeepLinkScreen from "./DeepLinkScreen";
-import ReelsFeed from "./ReelsFeed";
+import ReelsFeed, { type CoachStep } from "./ReelsFeed";
 
 // ---------- Typen für den Chat ----------
 
@@ -60,7 +60,7 @@ const WELCOME: Msg[] = [
     id: "w1",
     from: "bot",
     kind: "text",
-    text: "Hey 👋 Du scrollst durch Reels und denkst: „Da will ich auch mal hin!“? Schick mir das Reel – ich sag dir, wo das ist und was es kostet, und behalte den Preis im Blick, bis es in dein Budget passt.",
+    text: "Hey 👋 Du scrollst durch Reels und denkst: „Da will ich auch mal hin!“? Schick mir das Reel. Ich sag dir, wo das ist und was es kostet, und behalte den Preis im Blick, bis es in dein Budget passt.",
   },
 ];
 
@@ -81,7 +81,8 @@ export default function Demo() {
   const [input, setInput] = useState("");
   const [attachment, setAttachment] = useState<string | null>(null);
   const [awaitingHint, setAwaitingHint] = useState(false);
-  const [useCaption, setUseCaption] = useState(true);
+  const [coach, setCoach] = useState<CoachStep>("intro");
+  const [feedKey, setFeedKey] = useState(0);
   const [unread, setUnread] = useState(0);
 
   const lastReq = useRef<{ req: AnalyzeRequest; visuals: Visuals } | null>(null);
@@ -215,7 +216,7 @@ export default function Demo() {
     } catch {
       patch(framesId, (m) => (m.kind === "frames" ? { ...m, done: true } : m));
     }
-    await analyze({ reelId: reel.id, caption: useCaption ? reel.caption : undefined, frames }, visuals, frames.length ? framesId : undefined);
+    await analyze({ reelId: reel.id, caption: reel.caption, frames }, visuals, frames.length ? framesId : undefined);
   }
 
   function sendInput() {
@@ -331,14 +332,14 @@ export default function Demo() {
 
     const budgetLine =
       overBudget > 0
-        ? `Das sind noch ${formatEUR(overBudget)} über deinem Budget – kein Problem, ich behalte den Preis für dich im Blick.`
+        ? `Das sind noch ${formatEUR(overBudget)} über deinem Budget. Kein Problem, ich behalte den Preis für dich im Blick.`
         : "Passt sogar schon in dein Budget 🎉";
     push(
       {
         id: uid(),
         from: "bot",
         kind: "text",
-        text: `${existing ? "☝️ Ist schon auf deiner Bucket List" : `✅ ${entry.result.place} ist auf deiner Bucket List`} – aktuell ab ${formatEUR(price)} p. P. (${offer.nights} Nächte, ab ${p.origin}, ${p.month}). ${budgetLine} ${withAlert || overBudget > 0 ? "Wann soll ich mich melden?" : "Soll ich dir Bescheid geben, wenn’s noch günstiger wird?"}`,
+        text: `${existing ? "☝️ Ist schon auf deiner Bucket List" : `✅ ${entry.result.place} ist auf deiner Bucket List`}. Aktuell ab ${formatEUR(price)} p. P. (${offer.nights} Nächte, ab ${p.origin}, ${p.month}). ${budgetLine} ${withAlert || overBudget > 0 ? "Wann soll ich mich melden?" : "Soll ich dir Bescheid geben, wenn’s noch günstiger wird?"}`,
       },
       { id: uid("c"), from: "bot", kind: "chips", chips },
     );
@@ -388,7 +389,7 @@ export default function Demo() {
           body:
             profile && b.alert.threshold === profile.budget
               ? `🎉 Dein Traumziel ${b.result.place} passt jetzt in dein Budget: ab ${formatEUR(p)} p. P. (−${pct} %). Jetzt ansehen!`
-              : `🔔 ${b.result.place} jetzt ab ${formatEUR(p)} p. P. (−${pct} %). Dein Preisalarm hat ausgelöst – jetzt ansehen!`,
+              : `🔔 ${b.result.place} jetzt ab ${formatEUR(p)} p. P. (−${pct} %). Dein Preisalarm hat ausgelöst. Jetzt ansehen!`,
         });
       }
       return updated;
@@ -399,8 +400,8 @@ export default function Demo() {
     if (newBanners.length) {
       setToast(null);
       setBanners((prev) => [...newBanners, ...prev]);
-    } else if (bucket.length) setToast(`Woche ${newWeek}: Preise aktualisiert – noch kein Alarm ausgelöst`);
-    else setToast("Noch nichts auf der Bucket List – erst ein Reel teilen und speichern");
+    } else if (bucket.length) setToast(`Woche ${newWeek}: Preise aktualisiert, noch kein Alarm ausgelöst`);
+    else setToast("Noch nichts auf der Bucket List. Erst ein Reel teilen und speichern");
   }
 
   function reset() {
@@ -411,6 +412,8 @@ export default function Demo() {
     setLast(null);
     setBanners([]);
     setScreen("feed");
+    setCoach("intro");
+    setFeedKey((k) => k + 1);
     setSimOffset(0);
     setWeek(0);
     setAwaitingHint(false);
@@ -482,6 +485,10 @@ export default function Demo() {
             )}
 
             <div className="screen">
+              {/* Feed bleibt gemountet, damit Scrollposition und Ton beim Zurückkehren erhalten bleiben */}
+              <div className="feed-holder" style={{ display: screen === "feed" ? "flex" : "none" }}>
+                <ReelsFeed key={feedKey} onShare={shareReel} onToast={setToast} disabled={busy} step={coach} onStep={setCoach} />
+              </div>
               {screen === "deeplink" && deepItem ? (
                 <DeepLinkScreen
                   item={deepItem}
@@ -489,9 +496,7 @@ export default function Demo() {
                   onBack={goChat}
                   onBook={() => setToast("Demo-Ende: Hier ginge es in die normale CHECK24-Buchungsstrecke ✈️")}
                 />
-              ) : screen === "feed" ? (
-                <ReelsFeed onShare={shareReel} onToast={setToast} disabled={busy} />
-              ) : (
+              ) : screen === "feed" ? null : (
                 <div className="chat-screen">
                   <div className="chat-header">
                     <button className="back" onClick={() => setScreen("feed")}>
@@ -544,7 +549,7 @@ export default function Demo() {
             </div>
 
             {showNav && (
-              <nav className="phone-nav">
+              <nav className={`phone-nav ${screen === "feed" ? "dark" : ""}`}>
                 <button className={screen === "feed" ? "on" : ""} onClick={() => setScreen("feed")}>
                   <span>🎬</span>
                   <small>Reels</small>
@@ -563,7 +568,7 @@ export default function Demo() {
             {toast && <div className="toast">{toast}</div>}
           </div>
           <p className="phone-caption">
-            {screen === "feed" ? "Scrollen wie gewohnt – bei einem Traumziel auf ➤ Teilen → check24" : "Kundensicht: Direktnachricht an den CHECK24-Account"}
+            {screen === "feed" ? "Scrollen wie gewohnt. Traumziel gefunden? ➤ Teilen an check24" : "Kundensicht: Direktnachricht an den CHECK24-Account"}
           </p>
         </section>
 
@@ -574,8 +579,6 @@ export default function Demo() {
           log={log}
           last={last}
           week={week}
-          useCaption={useCaption}
-          onToggleCaption={() => setUseCaption((v) => !v)}
           onOpenItem={openDeepLink}
         />
       </main>
@@ -735,7 +738,7 @@ function MessageView({
             </span>
             {r.nearestAirport && (
               <span className="offer-meta">
-                ✈️ {r.nearestAirport.iata} – {r.nearestAirport.name}
+                ✈️ {r.nearestAirport.iata} · {r.nearestAirport.name}
               </span>
             )}
             <span className="demo-flag">Demo-Preis</span>

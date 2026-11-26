@@ -35,13 +35,13 @@ export default function LoginSheet({ onCancel, onDone }: { onCancel: () => void;
             Anmelden & verbinden
           </button>
           <p className="fineprint">
-            Demo: kein echter Login. Im Produkt würde hier die Social-Account-ID per Einmal-Token mit dem CHECK24-Kundenkonto verknüpft – inkl.
+            Demo: kein echter Login. Im Produkt würde hier die Social-Account-ID per Einmal-Token mit dem CHECK24-Kundenkonto verknüpft, inklusive
             Einwilligung zu Benachrichtigungen (Push/E-Mail).
           </p>
         </div>
       ) : (
         <div className="login-body">
-          <p className="onb-intro">Einmalig – damit Preise & Alarme zu dir passen.</p>
+          <p className="onb-intro">Einmalig, damit Preise und Alarme zu dir passen.</p>
           <div className="onb-label">Abflughafen</div>
           <div className="pill-row">
             {AIRPORTS.map((a) => (

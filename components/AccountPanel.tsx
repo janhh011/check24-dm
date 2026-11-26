@@ -15,8 +15,6 @@ export default function AccountPanel({
   log,
   last,
   week,
-  useCaption,
-  onToggleCaption,
   onOpenItem,
 }: {
   profile: UserProfile | null;
@@ -24,8 +22,6 @@ export default function AccountPanel({
   log: AnalyzeResponse[];
   last: LastAnalysis | null;
   week: number;
-  useCaption: boolean;
-  onToggleCaption: () => void;
   onOpenItem: (id: string) => void;
 }) {
   const [tab, setTab] = useState<Tab>("ki");
@@ -50,7 +46,7 @@ export default function AccountPanel({
       </nav>
 
       <div className="panel-body">
-        {tab === "ki" && <IdeeKI last={last} useCaption={useCaption} onToggleCaption={onToggleCaption} />}
+        {tab === "ki" && <IdeeKI last={last} />}
         {tab === "konto" && <Konto profile={profile} bucket={bucket} week={week} onOpenItem={onOpenItem} />}
         {tab === "log" && <Log log={log} />}
       </div>
@@ -60,7 +56,7 @@ export default function AccountPanel({
 
 // ---------- Idee & KI ----------
 
-function IdeeKI({ last, useCaption, onToggleCaption }: { last: LastAnalysis | null; useCaption: boolean; onToggleCaption: () => void }) {
+function IdeeKI({ last }: { last: LastAnalysis | null }) {
   const r = last?.resp.result;
   return (
     <div className="idea">
@@ -68,9 +64,9 @@ function IdeeKI({ last, useCaption, onToggleCaption }: { last: LastAnalysis | nu
         <span className="idea-kicker">Reel-to-Trip von CHECK24</span>
         <h2>„Boah, da will ich auch mal hin!“</h2>
         <p>
-          Genau in diesem Moment ist CHECK24 heute noch nicht dabei. Wer bei uns sucht, hat sich innerlich längst entschieden. Reel-to-Trip holt
-          Kund:innen <strong>schon bei der Inspiration</strong> ab – mit der Emotion aus dem Feed: Reel teilen, Preis checken, auf die Bucket List, bis es
-          ins Budget passt.
+          Genau in diesem Moment ist CHECK24 heute noch nicht dabei. Wer bei CHECK24 nach einer Reise sucht, hat sich innerlich längst entschieden.
+          Reel-to-Trip holt Kund:innen <strong>schon bei der Inspiration</strong> ab und nimmt die Emotion aus dem Feed mit: Reel teilen, Preis checken,
+          auf die Bucket List, bis es ins Budget passt.
         </p>
         <div className="funnel-compare">
           {[
@@ -98,7 +94,7 @@ function IdeeKI({ last, useCaption, onToggleCaption }: { last: LastAnalysis | nu
       {!last ? (
         <div className="empty small-empty">
           <p>
-            Teile links ein Reel an <strong>check24</strong> – hier siehst du dann live, welche Bilder die KI aus dem Video zieht und woran sie das Ziel erkennt.
+            Teile links ein Reel an <strong>check24</strong>. Hier siehst du dann live, welche Bilder die KI aus dem Video zieht und woran sie das Ziel erkennt.
           </p>
         </div>
       ) : (
@@ -115,7 +111,7 @@ function IdeeKI({ last, useCaption, onToggleCaption }: { last: LastAnalysis | nu
             ) : (
               <p className="muted small">Keine Videobilder (Text/Screenshot-Eingabe)</p>
             )}
-            <span className="live-caption">{last.resp.usedCaption ? `+ Bildunterschrift: „${last.visuals.caption.slice(0, 90)}“` : "ohne Bildunterschrift – nur Bilder"}</span>
+            <span className="live-caption">{last.resp.usedCaption ? `+ Bildunterschrift: „${last.visuals.caption.slice(0, 90)}“` : "ohne Bildunterschrift, nur Bilder"}</span>
           </div>
           <div className="live-arrow">→</div>
           <div className="live-col">
@@ -157,16 +153,6 @@ function IdeeKI({ last, useCaption, onToggleCaption }: { last: LastAnalysis | nu
         </div>
       )}
 
-      <label className="toggle">
-        <input type="checkbox" checked={useCaption} onChange={onToggleCaption} />
-        <span className="switch" />
-        <span>
-          <strong>Bildunterschrift mitschicken</strong>
-          <br />
-          <small className="muted">Ausschalten, um zu zeigen: Die KI erkennt das Ziel auch nur anhand der Bilder.</small>
-        </span>
-      </label>
-
       <h3>So funktioniert die KI</h3>
       <div className="ai-steps">
         <div>
@@ -177,12 +163,12 @@ function IdeeKI({ last, useCaption, onToggleCaption }: { last: LastAnalysis | nu
         <div>
           <span className="step-n">2</span>
           <strong>Multimodal verstehen</strong>
-          <p>Claude liest Texteinblendungen, erkennt Wahrzeichen und Landschaften und gleicht alles mit der Bildunterschrift ab – inkl. Widersprüchen.</p>
+          <p>Claude liest Texteinblendungen, erkennt Wahrzeichen und Landschaften und gleicht alles mit der Bildunterschrift ab, inklusive Widersprüchen.</p>
         </div>
         <div>
           <span className="step-n">3</span>
           <strong>Strukturiert ausgeben</strong>
-          <p>Ein festes JSON-Schema macht aus der Antwort Daten: Ort, Region, Zielflughafen, Spots, Sicherheit – oder eine Rückfrage, wenn’s unklar ist.</p>
+          <p>Ein festes JSON-Schema macht aus der Antwort Daten: Ort, Region, Zielflughafen, Spots, Sicherheit. Oder eine Rückfrage, wenn’s unklar ist.</p>
         </div>
         <div>
           <span className="step-n">4</span>

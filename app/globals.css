@@ -1381,7 +1381,7 @@ pre {
   font-size: 11px;
   font-weight: 600;
 }
-.reel-actions .share-btn span {
+.reel-actions .share-btn .share-icon {
   display: inline-block;
   transform: rotate(-20deg);
 }
@@ -1940,4 +1940,230 @@ pre {
   .fc-stage {
     font-size: 10px;
   }
+}
+
+/* v4: Endlos-Feed, Einführung, Ton, Rundungen */
+
+/* Rundung des Handys zuverlässig auf alle Inhalte (auch Videos) anwenden,
+   sonst blitzen in manchen Browsern eckige Flächen an den unteren Ecken durch */
+.phone {
+  isolation: isolate;
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  mask-image: radial-gradient(white, black);
+  background: #000;
+}
+.statusbar {
+  background: #fff;
+}
+.screen {
+  background: #fff;
+}
+.feed-holder {
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+.phone-nav {
+  border-radius: 0 0 34px 34px;
+  padding-bottom: 14px;
+}
+.phone-nav.dark {
+  background: #000;
+  border-top-color: #222;
+}
+.phone-nav.dark button {
+  color: #8a8f98;
+}
+.phone-nav.dark button.on {
+  color: #fff;
+}
+
+/* Einführung */
+.coach-intro {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  background: rgba(3, 20, 45, 0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  animation: fade 0.3s ease-out;
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+.coach-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 18px 18px 14px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  width: 100%;
+}
+.coach-kicker {
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--blue);
+}
+.coach-card h3 {
+  margin: 4px 0 10px;
+  color: var(--navy);
+  font-size: 20px;
+}
+.coach-card ol {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.coach-card li {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 13.5px;
+  line-height: 1.35;
+}
+.coach-card li b {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--blue-light);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+/* Wisch-Animation */
+.coach-swipe {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 7;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+.swipe-hand {
+  font-size: 54px;
+  animation: swipe 1.6s ease-in-out infinite;
+}
+@keyframes swipe {
+  0% {
+    transform: translateY(70px);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(-60px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-80px);
+    opacity: 0;
+  }
+}
+.swipe-text {
+  margin-top: 6px;
+  font-weight: 700;
+  font-size: 15px;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 5px 12px;
+  border-radius: 99px;
+}
+
+/* Hinweis-Blasen und Ziel-Markierung */
+.share-btn,
+.contact {
+  position: relative;
+}
+.coach-bubble {
+  position: absolute;
+  z-index: 3;
+  background: var(--yellow);
+  color: var(--navy);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 7px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+  text-shadow: none;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  animation: bob 1.2s ease-in-out infinite;
+  pointer-events: none;
+}
+.coach-bubble.left {
+  right: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+.coach-bubble.left::after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 12px;
+  height: 12px;
+  background: var(--yellow);
+}
+.coach-bubble.up {
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+.coach-bubble.up::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 12px;
+  height: 12px;
+  background: var(--yellow);
+}
+@keyframes bob {
+  50% {
+    margin-right: 6px;
+    margin-bottom: 3px;
+  }
+}
+.coach-target .share-icon,
+.coach-target .contact-avatar {
+  animation: ring 1.3s ease-out infinite;
+  border-radius: 50%;
+}
+.reel-actions .coach-target {
+  animation: none;
+}
+@keyframes ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 200, 61, 0.9);
+  }
+  100% {
+    box-shadow: 0 0 0 16px rgba(255, 200, 61, 0);
+  }
+}
+.share-icon {
+  display: inline-block;
+  transform: rotate(-20deg);
+}
+.coach-pulse {
+  animation: ring 1.3s ease-out infinite;
+}
+.contacts {
+  margin-top: 40px;
 }

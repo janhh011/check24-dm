@@ -1,4 +1,4 @@
-# Reel-to-Trip von CHECK24 – Feature-Konzept & Prototyp
+# Reel-to-Trip von CHECK24: Feature-Konzept & Prototyp
 
 > **„Boah, da will ich auch mal hin!“** In diesem Moment ist CHECK24 heute noch nicht dabei.
 
@@ -28,12 +28,12 @@ Die sechs Reels (Mallorca, Shanghai, Albanien, England, Rio, Athen) sind **nicht
 
 ## Demo-Ablauf (ca. 3 Minuten)
 
-1. **Scrollen:** Links läuft ein Reels-Feed wie gewohnt. Kurz durchwischen.
-2. **Der Moment:** Beim Shanghai-Reel denkt man „Boah, da will ich hin!“. Also auf **➤ Teilen** tippen, **check24** wählen, **Senden**.
-3. **KI bei der Arbeit:** Im Chat erscheinen live 8 Bilder aus dem Video. Die KI erkennt Shanghai an der Skyline (Oriental Pearl Tower, Shanghai Tower) und zeigt einen Preis. Rechts unter **Idee & KI** steht, woran sie das Ziel erkannt hat.
-4. **Bucket List statt Buchung:** *Auf Bucket List* tippen, Konto verbinden (Demo, Budget 800 €). Der Bot sagt, wie weit das Ziel noch über dem Budget liegt, dann **„Sobald’s in mein Budget passt“** wählen.
-5. **⏩ 1 Woche vorspulen** (2–4 ×): Im Konto füllt sich der Budget-Balken, dann kommt der Push „Dein Traumziel passt jetzt in dein Budget“. Ein Klick öffnet die vorausgefüllte Suche.
-6. **KI-Beweis:** Unter *Idee & KI* „Bildunterschrift mitschicken“ ausschalten und ein weiteres Reel teilen. Die Erkennung klappt auch nur mit Bildern.
+1. **Einstieg:** Die Einführung im Handy erklärt die Bedienung. „Los geht’s“ startet den Feed mit Ton.
+2. **Scrollen:** Der Reels-Feed läuft endlos, nach dem letzten Reel kommt wieder das erste.
+3. **Der Moment:** Beim Shanghai-Reel denkt man „Boah, da will ich hin!“. Also auf **➤ Teilen** tippen, **check24** wählen, **Senden**.
+4. **KI bei der Arbeit:** Im Chat erscheinen live 8 Bilder aus dem Video. Die KI erkennt Shanghai an der Skyline (Oriental Pearl Tower, Shanghai Tower) und zeigt einen Preis. Rechts unter **Idee & KI** steht, woran sie das Ziel erkannt hat.
+5. **Bucket List statt Buchung:** *Auf Bucket List* tippen, Konto verbinden (Demo, Budget 800 €). Der Bot sagt, wie weit das Ziel noch über dem Budget liegt, dann **„Sobald’s in mein Budget passt“** wählen.
+6. **⏩ 1 Woche vorspulen** (2 bis 4 ×): Im Konto füllt sich der Budget-Balken, dann kommt der Push „Dein Traumziel passt jetzt in dein Budget“. Ein Klick öffnet die vorausgefüllte Suche.
 7. **Unklarer Fall:** Das England-Reel zeigt Orte in England, Wales und Schottland. Die KI merkt den Widerspruch zur Bildunterschrift und fragt nach.
 
 ## Wie die KI funktioniert
