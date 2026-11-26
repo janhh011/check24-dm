@@ -1401,9 +1401,9 @@ pre {
 .reel-meta {
   position: absolute;
   left: 0;
-  right: 56px;
+  right: 0;
   bottom: 0;
-  padding: 40px 12px 14px;
+  padding: 40px 64px 14px 12px; /* Verlauf über die volle Breite, Text lässt Platz für die Aktionsleiste */
   color: #fff;
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.65));
   z-index: 1;
