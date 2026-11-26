@@ -16,6 +16,7 @@ const base: DestinationResult = {
   signals: [],
   spots: [],
   candidates: [],
+  similar: [],
   clarifyingQuestion: "",
   teaser: "",
 };
@@ -34,6 +35,7 @@ const PRESETS: Record<string, DestinationResult> = {
     signals: ["Texteinblendungen „Caló des Moro“, „Valldemossa“, „Deià“, „Sóller“", "Hashtags #mallorca #spaintravel", "türkise Buchten, Natursteindörfer"],
     spots: ["Caló des Moro", "Valldemossa", "Deià", "Sóller", "Restaurant Illeta", "Gran Folies Beach Club"],
     teaser: "Türkise Buchten, Bergdörfer und die Holzbahn nach Sóller: Mallorca kann so viel mehr als Ballermann.",
+    similar: [{ place: "Menorca", country: "Spanien", countryCode: "ES", reason: "ruhigere Buchten, gleiches Wasser" }, { place: "Kreta", country: "Griechenland", countryCode: "GR", reason: "Strände und Bergdörfer" }, { place: "Sardinien", country: "Italien", countryCode: "IT", reason: "türkise Buchten, weniger Trubel" }],
   },
   shanghai: {
     ...base,
@@ -48,6 +50,7 @@ const PRESETS: Record<string, DestinationResult> = {
     signals: ["Oriental Pearl Tower im Bild", "Shanghai Tower + World Financial Center", "Bildunterschrift nennt Shanghai"],
     spots: ["Oriental Pearl Tower", "Shanghai Tower", "The Bund", "Yan’an-Hochstraße"],
     teaser: "Neon-Skyline am Huangpu: Shanghai fühlt sich wirklich an wie 2088. 🌃",
+    similar: [{ place: "Tokio", country: "Japan", countryCode: "JP", reason: "Neon-Skyline und Großstadtgefühl" }, { place: "Hongkong", country: "China", countryCode: "CN", reason: "Skyline am Wasser" }, { place: "Singapur", country: "Singapur", countryCode: "SG", reason: "futuristische Architektur" }],
   },
   albanien: {
     ...base,
@@ -62,6 +65,7 @@ const PRESETS: Record<string, DestinationResult> = {
     signals: ["Texteinblendung „Reise nach ALBANIEN“", "albanisches Kennzeichen", "Küstenpanorama, Kiesstrand, Wasserfall"],
     spots: ["Llogara-Pass", "Kiesstrände am Ionischen Meer", "Wasserfall in der Schlucht"],
     teaser: "Wilde Küste, Bergstraßen und leere Strände: Albanien ist Roadtrip-Abenteuer pur. 🚙",
+    similar: [{ place: "Montenegro", country: "Montenegro", countryCode: "ME", reason: "wilde Küste, kleine Buchten" }, { place: "Korfu", country: "Griechenland", countryCode: "GR", reason: "direkt gegenüber, ähnliches Meer" }, { place: "Kroatien", country: "Kroatien", countryCode: "HR", reason: "Roadtrip entlang der Adria" }],
   },
   england: {
     ...base,
@@ -92,6 +96,7 @@ const PRESETS: Record<string, DestinationResult> = {
     signals: ["Morro Dois Irmãos hinter dem Strand (Ipanema)", "Christusstatue", "Brasilien-Flagge im Text"],
     spots: ["Ipanema", "Morro Dois Irmãos", "Christus der Erlöser", "Rocinha"],
     teaser: "Fußball am Strand, Sonnenuntergang über Ipanema: Rio lebt draußen. 🇧🇷",
+    similar: [{ place: "Salvador da Bahia", country: "Brasilien", countryCode: "BR", reason: "Strand, Musik, Lebensgefühl" }, { place: "Kapstadt", country: "Südafrika", countryCode: "ZA", reason: "Berg trifft Strand" }, { place: "Cartagena", country: "Kolumbien", countryCode: "CO", reason: "karibisches Stadtleben" }],
   },
   athen: {
     ...base,
@@ -106,6 +111,7 @@ const PRESETS: Record<string, DestinationResult> = {
     signals: ["Parthenon und Propyläen", "Texteinblendung „Akropolis“", "Athener Metro + Markthalle"],
     spots: ["Akropolis", "Parthenon", "Zentrale Markthalle", "Plaka"],
     teaser: "Morgens Akropolis, mittags Markthalle, abends Plaka. Athen ist der perfekte Städtetrip. 🏛️",
+    similar: [{ place: "Rom", country: "Italien", countryCode: "IT", reason: "antike Geschichte pur" }, { place: "Istanbul", country: "Türkei", countryCode: "TR", reason: "Kultur und Märkte" }, { place: "Thessaloniki", country: "Griechenland", countryCode: "GR", reason: "griechisches Stadtleben, entspannter" }],
   },
 };
 
@@ -123,6 +129,7 @@ const CANDIDATE_PRESETS: Record<string, DestinationResult> = {
     signals: ["Nutzer-Auswahl", "Fachwerkhäuser und Stocherkähne am Fluss Stour"],
     spots: ["Canterbury Cathedral", "Stocherkahnfahrt auf dem Stour"],
     teaser: "Fachwerk, Blumen und Stocherkähne: Canterbury ist England wie aus dem Bilderbuch.",
+    similar: [{ place: "York", country: "England", countryCode: "GB", reason: "mittelalterliche Altstadt" }, { place: "Bath", country: "England", countryCode: "GB", reason: "historische Stadt am Fluss" }, { place: "Brügge", country: "Belgien", countryCode: "BE", reason: "Kanäle und Giebelhäuser" }],
   },
   "elan valley": {
     ...base,
@@ -137,6 +144,7 @@ const CANDIDATE_PRESETS: Record<string, DestinationResult> = {
     signals: ["Nutzer-Auswahl", "viktorianische Staumauern mit Überlauf"],
     spots: ["Caban-Coch-Damm", "Craig-Goch-Damm"],
     teaser: "Viktorianische Staudämme mitten in grünen Hügeln. Wales von seiner wildesten Seite.",
+    similar: [{ place: "Lake District", country: "England", countryCode: "GB", reason: "Seen und grüne Hügel" }, { place: "Snowdonia", country: "Wales", countryCode: "GB", reason: "Wandern in Wales" }, { place: "Schottische Highlands", country: "Schottland", countryCode: "GB", reason: "raue Natur" }],
   },
 };
 

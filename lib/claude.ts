@@ -16,6 +16,7 @@ Regeln für die Ausgabe (ausschließlich im vorgegebenen JSON-Schema):
 - "not_travel": der Inhalt zeigt kein Reiseziel (z. B. Café-Tipp zu Hause, Produktwerbung, Rezept).
 - "place": kurzer Ortsname ohne Zusätze. "region": Insel, Küstenabschnitt oder Stadtteil, nur wenn sicher, sonst leer.
 - "nearestAirport": sinnvollster Zielflughafen (IATA) mit kurzem Namen (max. 5 Wörter); liegt er nicht vor Ort, hänge die Weiterreise in max. 6 Wörtern an. Bei Unklarheit iata und name leer.
+- "similar": bei "identified" genau 3 ähnliche, gut als Pauschalreise buchbare Reiseziele (nicht der erkannte Ort selbst), je mit ISO-Ländercode und einem kurzen Grund (max. 6 Wörter), z. B. „ähnliche Buchten, weniger Trubel“. Sonst leere Liste.
 - "spots": konkrete Orte/Sehenswürdigkeiten, die im Video zu sehen sind (max. 6, nur was du wirklich erkennst).
 - "signals": 3 bis 5 knappe Hinweise (je max. 10 Wörter), woran du das Ziel erkannt hast, z. B. „Texteinblendung ‚Caló des Moro‘“ oder „Oriental Pearl Tower im Bild“.
 - Nicht zutreffende Felder als leeren String bzw. leere Liste ausgeben.
@@ -53,6 +54,15 @@ const SCHEMA = {
         required: ["place", "country"],
       },
     },
+    similar: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: { place: { type: "string" }, country: { type: "string" }, countryCode: { type: "string" }, reason: { type: "string" } },
+        required: ["place", "country", "countryCode", "reason"],
+      },
+    },
     clarifyingQuestion: { type: "string" },
     teaser: { type: "string" },
   },
@@ -69,6 +79,7 @@ const SCHEMA = {
     "signals",
     "spots",
     "candidates",
+    "similar",
     "clarifyingQuestion",
     "teaser",
   ],
@@ -151,6 +162,7 @@ function normalize(r: Partial<DestinationResult>): DestinationResult {
     signals: r.signals ?? [],
     spots: r.spots ?? [],
     candidates: r.candidates ?? [],
+    similar: (r.similar ?? []).slice(0, 3).map((x) => ({ ...x, countryCode: (x.countryCode ?? "").toUpperCase() })),
     clarifyingQuestion: r.clarifyingQuestion ?? "",
     teaser: r.teaser ?? "",
   };

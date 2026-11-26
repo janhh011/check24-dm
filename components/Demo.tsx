@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { extractFrames } from "@/lib/frames";
 import { DEFAULT_PROFILE, destinationKey, formatEUR, quoteOffer } from "@/lib/pricing";
-import type { AnalyzeRequest, AnalyzeResponse, BucketItem, DestinationResult, Offer, Reel, UserProfile } from "@/lib/types";
+import type { AnalyzeRequest, AnalyzeResponse, BucketItem, DestinationResult, Offer, Reel, SimilarTrip, UserProfile } from "@/lib/types";
 import AccountPanel from "./AccountPanel";
 import LoginSheet from "./LoginSheet";
 import DeepLinkScreen from "./DeepLinkScreen";
@@ -72,7 +72,7 @@ export default function Demo() {
   const [last, setLast] = useState<LastAnalysis | null>(null);
   const [mode, setMode] = useState<{ mode: string; model: string } | null>(null);
   const [screen, setScreen] = useState<"feed" | "chat" | "login" | "deeplink">("feed");
-  const [deepLinkItem, setDeepLinkItem] = useState<string | null>(null);
+  const [deepView, setDeepView] = useState<BucketItem | null>(null);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [coach, setCoach] = useState<CoachStep>("intro");
@@ -376,12 +376,54 @@ export default function Demo() {
   }
 
   function openDeepLink(itemId: string) {
-    setDeepLinkItem(itemId);
+    const item = bucketRef.current.find((b) => b.id === itemId);
+    if (!item) return;
+    setDeepView(item);
     setScreen("deeplink");
     setBanners((prev) => prev.filter((b) => b.itemId !== itemId));
   }
 
-  const deepItem = bucket.find((b) => b.id === deepLinkItem) ?? null;
+  // Direkt zu den Angeboten (ohne Bucket List), z. B. aus der Ergebnis-Karte oder über „Ähnliche Reisen“
+  function openOffers(result: DestinationResult, visuals: { caption: string; emoji: string; poster?: string }) {
+    const offer = quoteOffer(result, profile ?? DEFAULT_PROFILE);
+    const known = bucket.find((b) => destinationKey(b.result) === destinationKey(result));
+    setDeepView(
+      known ?? {
+        id: uid("v"),
+        result,
+        offer,
+        addedAt: Date.now(),
+        reelCaption: visuals.caption,
+        poster: visuals.poster,
+        emoji: visuals.emoji,
+        priceHistory: [offer.pricePP],
+      },
+    );
+    setScreen("deeplink");
+  }
+
+  function openSimilar(s: SimilarTrip) {
+    const result: DestinationResult = {
+      status: "identified",
+      place: s.place,
+      region: "",
+      country: s.country,
+      countryCode: s.countryCode,
+      nearestAirport: null,
+      tripType: "Mix",
+      bestMonths: [],
+      confidence: 1,
+      signals: [],
+      spots: [],
+      candidates: [],
+      similar: [],
+      clarifyingQuestion: "",
+      teaser: s.reason,
+    };
+    openOffers(result, { caption: s.reason, emoji: "✈️" });
+  }
+
+  const deepItem = deepView;
   const showNav = screen === "feed" || screen === "chat";
 
   // ---------- Render ----------
@@ -438,6 +480,7 @@ export default function Demo() {
               {screen === "deeplink" && deepItem ? (
                 <DeepLinkScreen
                   item={deepItem}
+                  onSimilar={openSimilar}
                   profile={profile ?? DEFAULT_PROFILE}
                   onBack={goChat}
                   onBook={() => setToast("Demo-Ende: Hier ginge es in die normale CHECK24-Buchungsstrecke ✈️")}
@@ -459,7 +502,7 @@ export default function Demo() {
 
                   <div className="chat">
                     {msgs.map((m) => (
-                      <MessageView key={m.id} m={m} onChip={onChip} onResultAction={onResultAction} onConnect={() => setScreen("login")} busy={busy} profile={profile} />
+                      <MessageView key={m.id} m={m} onChip={onChip} onResultAction={onResultAction} onOffers={openOffers} onConnect={() => setScreen("login")} busy={busy} profile={profile} />
                     ))}
                     <div ref={chatEnd} />
                   </div>
@@ -530,6 +573,7 @@ function MessageView({
   m,
   onChip,
   onResultAction,
+  onOffers,
   onConnect,
   busy,
   profile,
@@ -537,6 +581,7 @@ function MessageView({
   m: Msg;
   onChip: (id: string, c: Chip) => void;
   onResultAction: (id: string, a: "save" | "alert") => void;
+  onOffers: (r: DestinationResult, v: Visuals) => void;
   onConnect: () => void;
   busy: boolean;
   profile: UserProfile | null;
@@ -687,6 +732,9 @@ function MessageView({
             </button>
             <button className="btn btn-yellow small" disabled={m.used || busy} onClick={() => onResultAction(m.id, "alert")}>
               🔔 Preisalarm
+            </button>
+            <button className="btn btn-offers small" disabled={busy} onClick={() => onOffers(m.result, m.visuals)}>
+              ✈️ Angebote &amp; ähnliche Reisen
             </button>
           </div>
         </div>

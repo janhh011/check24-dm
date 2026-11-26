@@ -7,6 +7,13 @@ export interface Airport {
   name: string;
 }
 
+export interface SimilarTrip {
+  place: string;
+  country: string;
+  countryCode: string;
+  reason: string; // kurz, warum es ähnlich ist
+}
+
 export interface Candidate {
   place: string;
   country: string;
@@ -26,6 +33,7 @@ export interface DestinationResult {
   signals: string[]; // woran das Ziel erkannt wurde
   spots: string[]; // konkrete Orte/Sehenswürdigkeiten, die im Video zu sehen sind
   candidates: Candidate[]; // bei status = ambiguous
+  similar: SimilarTrip[]; // ähnliche, gut buchbare Reiseziele
   clarifyingQuestion: string;
   teaser: string; // ein lockerer Satz zum Ort, im CHECK24-Ton
 }

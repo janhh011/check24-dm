@@ -29,6 +29,10 @@ const BASE_BY_COUNTRY: Record<string, number> = {
   CN: 1149,
   BR: 1449,
   GB: 579,
+  ZA: 1299,
+  CO: 1399,
+  SG: 1349,
+  BE: 499,
 };
 
 const ORIGIN_FACTOR: Record<string, number> = { BER: 1, HAM: 1.02, MUC: 0.97, FRA: 0.98, DUS: 0.99, CGN: 0.99, LEJ: 1.04 };
