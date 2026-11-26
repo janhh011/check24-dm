@@ -18,7 +18,6 @@ Reel-to-Trip ergänzt den bestehenden Weg um einen früheren Einstieg, es ersetz
 ```bash
 npm install
 cp .env.example .env.local                  # ANTHROPIC_API_KEY eintragen
-./scripts/prepare-reels.sh ~/Pfad/zu/videos  # Demo-Videos nach public/reels/ (siehe unten)
 npm run dev                                 # http://localhost:3000
 ```
 
@@ -26,7 +25,7 @@ Ohne API-Key läuft die App im **Offline-Modus** mit vorbereiteten Antworten fü
 
 ### Demo-Videos
 
-Die sechs Reels (Mallorca, Rio, Albanien, Shanghai, Athen, England) sind **nicht im Repo**, weil die Rechte bei den Creators liegen. `scripts/prepare-reels.sh` erwartet einen Ordner mit MP4-Dateien, deren Name das jeweilige Stichwort enthält. Das Skript erzeugt `public/reels/<id>.mp4` (fürs Web optimiert) und ein Posterbild.
+Die sechs Reels liegen fürs Web optimiert unter `public/reels/` (MP4 plus Posterbild). Für eigene Videos gibt es `scripts/prepare-reels.sh`.
 
 ## Demo-Ablauf (ca. 3 Minuten)
 
