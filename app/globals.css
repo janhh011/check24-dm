@@ -2236,3 +2236,229 @@ pre {
 .toast {
   bottom: 130px;
 }
+
+/* =====================================================================
+   v9: Smartphone-Ansicht (Desktop bleibt unverändert)
+   ===================================================================== */
+@media (max-width: 640px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+  .topbar {
+    padding: 8px 12px;
+    gap: 6px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .brand {
+    gap: 8px;
+    min-width: 0;
+  }
+  .wordmark {
+    font-size: 17px;
+  }
+  .divider {
+    height: 16px;
+  }
+  .product {
+    font-size: 14px;
+  }
+  .badge-concept {
+    font-size: 9.5px;
+    padding: 2px 6px;
+  }
+  .byline {
+    display: none;
+  }
+  .controls {
+    width: 100%;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+  .mode {
+    font-size: 10.5px;
+    padding: 3px 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 34%;
+  }
+  .simclock {
+    font-size: 11.5px;
+    white-space: nowrap;
+  }
+  .controls .btn {
+    padding: 6px 9px;
+    font-size: 12px;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+  .controls .btn-yellow {
+    margin-left: auto;
+  }
+
+  .stage {
+    display: flex;
+    flex-direction: column;
+    padding: 0 0 20px;
+    gap: 16px;
+  }
+
+  /* Handy wird zum echten Bildschirm: volle Breite, kein Rahmen */
+  .phone-wrap {
+    width: 100%;
+  }
+  .phone {
+    width: 100%;
+    height: calc(100svh - 82px);
+    min-height: 560px;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .statusbar {
+    display: none;
+  }
+  .phone-nav {
+    border-radius: 0;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+  .phone-caption {
+    display: none;
+  }
+  .banners {
+    top: 8px;
+  }
+  .coach-intro {
+    padding: 14px;
+  }
+  .result-card,
+  .frames-card {
+    width: 92%;
+  }
+
+  /* Panel unter dem Handy */
+  .panel {
+    margin: 0 10px;
+    min-height: 0;
+    max-height: none;
+    border-radius: 16px;
+  }
+  .tabs {
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 0 6px;
+  }
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .tabs button {
+    padding: 12px 10px 10px;
+    white-space: nowrap;
+    font-size: 13px;
+  }
+  .panel-body {
+    padding: 14px;
+    overflow: visible;
+  }
+  .panel h2 {
+    font-size: 18px;
+  }
+  .idea-hero {
+    padding: 14px;
+  }
+  .idea-hero h2 {
+    font-size: 20px;
+  }
+  .idea-hero p {
+    font-size: 13.5px;
+  }
+  .fc-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .fc-stages {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .fc-stage {
+    font-size: 11px;
+    white-space: normal;
+  }
+  .fc-note {
+    line-height: 1.6;
+  }
+  .live {
+    grid-template-columns: 1fr;
+  }
+  .live-arrow {
+    display: none;
+  }
+  .ai-steps {
+    grid-template-columns: 1fr;
+  }
+  .acct-head {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .acct-status {
+    text-align: left;
+  }
+  .bucket-item {
+    gap: 10px;
+    padding: 8px;
+  }
+  .bucket-thumb {
+    width: 46px;
+    height: 46px;
+  }
+  .bucket-info strong {
+    font-size: 14px;
+  }
+  .budget-track {
+    width: 60px;
+  }
+  .spark {
+    width: 64px;
+  }
+  .tag {
+    white-space: normal;
+  }
+  .log-frames {
+    flex-wrap: wrap;
+  }
+  .log-frames img {
+    height: 44px;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+}
+@media (max-width: 640px) {
+  .mode {
+    max-width: none;
+    flex-shrink: 0;
+  }
+  .mode-model {
+    display: none;
+  }
+  .budget {
+    flex-wrap: wrap;
+    gap: 2px 8px;
+  }
+}
+.lbl-short {
+  display: none;
+}
+@media (max-width: 400px) {
+  .lbl-long {
+    display: none;
+  }
+  .lbl-short {
+    display: inline;
+  }
+}

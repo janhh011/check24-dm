@@ -289,7 +289,7 @@ function Sparkline({ values, threshold }: { values: number[]; threshold?: number
   const y = (v: number) => h - ((v - min) / (max - min || 1)) * h;
   const pts = values.map((v, i) => `${x(i)},${y(v)}`).join(" ");
   return (
-    <svg width={w} height={h} className="spark" aria-hidden>
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="spark" aria-hidden>
       {threshold && <line x1={0} x2={w} y1={y(threshold)} y2={y(threshold)} className="spark-th" />}
       <polyline points={pts} className="spark-line" />
       <circle cx={x(values.length - 1)} cy={y(values[values.length - 1])} r={2.8} className="spark-dot" />

@@ -398,14 +398,15 @@ export default function Demo() {
         </div>
         <div className="controls">
           <span className={`mode ${mode?.mode === "claude" ? "mode-live" : "mode-offline"}`}>
-            {mode ? (mode.mode === "claude" ? `● KI live · ${mode.model}` : "● Offline-Modus") : "…"}
+            {mode ? mode.mode === "claude" ? <>● KI live<span className="mode-model"> · {mode.model}</span></> : "● Offline-Modus" : "…"}
           </span>
           <span className="simclock">📅 {week === 0 ? "Heute" : `+${week} Woche${week > 1 ? "n" : ""}`}</span>
           <button className="btn btn-yellow" onClick={fastForward} title="Simuliert eine Woche Preisbeobachtung">
-            ⏩ 1 Woche vorspulen
+            ⏩ <span className="lbl-long">1 Woche vorspulen</span>
+            <span className="lbl-short">+1 Woche</span>
           </button>
           <button className="btn btn-ghost" onClick={reset}>
-            ↺ Neu starten
+            ↺ <span className="lbl-long">Neu starten</span>
           </button>
         </div>
       </header>
