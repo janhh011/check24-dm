@@ -1,48 +1,190 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { formatEUR } from "@/lib/pricing";
 import type { AnalyzeResponse, BucketItem, UserProfile } from "@/lib/types";
+import type { LastAnalysis } from "./Demo";
 
-type Tab = "konto" | "funktion" | "log";
+type Tab = "ki" | "konto" | "log";
 
 export default function AccountPanel({
   profile,
   bucket,
   log,
+  last,
   week,
+  useCaption,
+  onToggleCaption,
   onOpenItem,
 }: {
   profile: UserProfile | null;
   bucket: BucketItem[];
   log: AnalyzeResponse[];
+  last: LastAnalysis | null;
   week: number;
+  useCaption: boolean;
+  onToggleCaption: () => void;
   onOpenItem: (id: string) => void;
 }) {
-  const [tab, setTab] = useState<Tab>("konto");
+  const [tab, setTab] = useState<Tab>("ki");
+
+  // Sobald etwas auf der Bucket List landet, die Kontoansicht zeigen
+  useEffect(() => {
+    if (bucket.length === 1) setTab("konto");
+  }, [bucket.length]);
 
   return (
     <section className="panel">
       <nav className="tabs">
+        <button className={tab === "ki" ? "on" : ""} onClick={() => setTab("ki")}>
+          Idee & KI
+        </button>
         <button className={tab === "konto" ? "on" : ""} onClick={() => setTab("konto")}>
           CHECK24-Konto {bucket.length > 0 && <span className="count">{bucket.length}</span>}
         </button>
-        <button className={tab === "funktion" ? "on" : ""} onClick={() => setTab("funktion")}>
-          So funktioniert’s
-        </button>
         <button className={tab === "log" ? "on" : ""} onClick={() => setTab("log")}>
-          Claude-Log {log.length > 0 && <span className="count">{log.length}</span>}
+          KI-Log {log.length > 0 && <span className="count">{log.length}</span>}
         </button>
       </nav>
 
       <div className="panel-body">
+        {tab === "ki" && <IdeeKI last={last} useCaption={useCaption} onToggleCaption={onToggleCaption} />}
         {tab === "konto" && <Konto profile={profile} bucket={bucket} week={week} onOpenItem={onOpenItem} />}
-        {tab === "funktion" && <Funktion />}
         {tab === "log" && <Log log={log} />}
       </div>
     </section>
   );
 }
+
+// ---------- Idee & KI ----------
+
+function IdeeKI({ last, useCaption, onToggleCaption }: { last: LastAnalysis | null; useCaption: boolean; onToggleCaption: () => void }) {
+  const r = last?.resp.result;
+  return (
+    <div className="idea">
+      <div className="idea-hero">
+        <h2>Vom Reel zur Reise – mit einem Tipp</h2>
+        <p>
+          Reiseinspiration entsteht heute im Feed – gebucht wird woanders, oder gar nicht. <strong>Reel-to-Trip</strong> schließt die Lücke: Reel an
+          CHECK24 schicken, die KI erkennt das Ziel, und aus dem gespeicherten Video wird ein Angebot mit Preisalarm.
+        </p>
+        <div className="idea-flow">
+          <span>🎬 Reel teilen</span>
+          <b>→</b>
+          <span>🧠 KI erkennt Ziel</span>
+          <b>→</b>
+          <span>⭐ Bucket List</span>
+          <b>→</b>
+          <span>🔔 Preisalarm</span>
+          <b>→</b>
+          <span>✈️ Buchen</span>
+        </div>
+      </div>
+
+      <h3>Was die KI gerade gesehen hat</h3>
+      {!last ? (
+        <div className="empty small-empty">
+          <p>
+            Teile links ein Reel an <strong>check24</strong> – hier siehst du dann live, welche Bilder die KI aus dem Video zieht und woran sie das Ziel erkennt.
+          </p>
+        </div>
+      ) : (
+        <div className="live">
+          <div className="live-col">
+            <span className="live-label">① Bilder aus dem Video</span>
+            {last.frames.length ? (
+              <div className="live-frames">
+                {last.frames.map((f, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={i} src={f} alt={`Bild ${i + 1}`} />
+                ))}
+              </div>
+            ) : (
+              <p className="muted small">Keine Videobilder (Text/Screenshot-Eingabe)</p>
+            )}
+            <span className="live-caption">{last.resp.usedCaption ? `+ Bildunterschrift: „${last.visuals.caption.slice(0, 90)}“` : "ohne Bildunterschrift – nur Bilder"}</span>
+          </div>
+          <div className="live-arrow">→</div>
+          <div className="live-col">
+            <span className="live-label">② Woran Claude das Ziel erkennt</span>
+            <ul className="live-signals">
+              {r?.signals.map((s, i) => (
+                <li key={i}>{s}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="live-arrow">→</div>
+          <div className="live-col result-col">
+            <span className="live-label">③ Ergebnis</span>
+            {r?.status === "identified" ? (
+              <>
+                <strong className="live-place">📍 {r.place}</strong>
+                <span className="muted small">
+                  {r.region ? `${r.region}, ` : ""}
+                  {r.country}
+                </span>
+                {r.nearestAirport && <span className="small">✈️ {r.nearestAirport.iata}</span>}
+                <div className="meter">
+                  <div style={{ width: `${Math.round(r.confidence * 100)}%` }} />
+                </div>
+                <span className="small muted">{Math.round(r.confidence * 100)} % sicher</span>
+              </>
+            ) : r?.status === "ambiguous" ? (
+              <>
+                <strong className="live-place">🤔 Rückfrage</strong>
+                <span className="small">{r.candidates.map((c) => c.place).join(" · ") || "Ort unklar"}</span>
+              </>
+            ) : (
+              <strong className="live-place">Kein Reiseziel</strong>
+            )}
+            <span className="tag" style={{ marginTop: 6 }}>
+              {last.resp.source === "claude" ? `${(last.resp.latencyMs / 1000).toFixed(1)} s · live` : "Offline-Antwort"}
+            </span>
+          </div>
+        </div>
+      )}
+
+      <label className="toggle">
+        <input type="checkbox" checked={useCaption} onChange={onToggleCaption} />
+        <span className="switch" />
+        <span>
+          <strong>Bildunterschrift mitschicken</strong>
+          <br />
+          <small className="muted">Ausschalten, um zu zeigen: Die KI erkennt das Ziel auch nur anhand der Bilder.</small>
+        </span>
+      </label>
+
+      <h3>So funktioniert die KI</h3>
+      <div className="ai-steps">
+        <div>
+          <span className="step-n">1</span>
+          <strong>Video in Bilder zerlegen</strong>
+          <p>8 Einzelbilder, gleichmäßig über das Video verteilt. Im Produkt per Worker mit Szenenwechsel-Erkennung plus Audio-Transkript.</p>
+        </div>
+        <div>
+          <span className="step-n">2</span>
+          <strong>Multimodal verstehen</strong>
+          <p>Claude liest Texteinblendungen, erkennt Wahrzeichen und Landschaften und gleicht alles mit der Bildunterschrift ab – inkl. Widersprüchen.</p>
+        </div>
+        <div>
+          <span className="step-n">3</span>
+          <strong>Strukturiert ausgeben</strong>
+          <p>Ein festes JSON-Schema macht aus der Antwort Daten: Ort, Region, Zielflughafen, Spots, Sicherheit – oder eine Rückfrage, wenn’s unklar ist.</p>
+        </div>
+        <div>
+          <span className="step-n">4</span>
+          <strong>Auf CHECK24 abbilden</strong>
+          <p>Flughafen + Region → passende Pauschalreisen. Bucket List und Preisalarm laufen im Kundenkonto, der Push führt direkt in die Suche.</p>
+        </div>
+      </div>
+      <p className="muted small footnote">
+        Im Prototyp echt: Bilder aus dem Video ziehen + Zielerkennung über die Claude API. Simuliert: Social-App, Login, Preise, Hotelliste.
+      </p>
+    </div>
+  );
+}
+
+// ---------- Konto ----------
 
 function Konto({ profile, bucket, week, onOpenItem }: { profile: UserProfile | null; bucket: BucketItem[]; week: number; onOpenItem: (id: string) => void }) {
   return (
@@ -50,7 +192,7 @@ function Konto({ profile, bucket, week, onOpenItem }: { profile: UserProfile | n
       <div className="acct-head">
         <div>
           <h2>Meine Bucket List</h2>
-          <p className="muted">Sicht im CHECK24-Kundenkonto (App & Web)</p>
+          <p className="muted">So sieht’s im CHECK24-Kundenkonto aus (App & Web)</p>
         </div>
         <div className={`acct-status ${profile ? "ok" : ""}`}>
           {profile ? (
@@ -62,7 +204,7 @@ function Konto({ profile, bucket, week, onOpenItem }: { profile: UserProfile | n
               </span>
             </>
           ) : (
-            "Noch nicht mit Social-Account verbunden"
+            "Noch nicht verbunden"
           )}
         </div>
       </div>
@@ -71,7 +213,7 @@ function Konto({ profile, bucket, week, onOpenItem }: { profile: UserProfile | n
         <div className="empty">
           <div className="empty-emoji">🧳</div>
           <p>
-            Noch leer. Teile im Handy links über <strong>🎬</strong> ein Reel an den CHECK24-Account und tippe auf <strong>Auf Bucket List</strong>.
+            Noch leer. Teile links ein Reel an <strong>check24</strong> und tippe auf <strong>Auf Bucket List</strong>.
           </p>
         </div>
       ) : (
@@ -81,8 +223,8 @@ function Konto({ profile, bucket, week, onOpenItem }: { profile: UserProfile | n
             const diff = Math.round((cur / b.offer.pricePP - 1) * 100);
             return (
               <button key={b.id} className="bucket-item" onClick={() => onOpenItem(b.id)}>
-                <div className="bucket-thumb" style={{ background: b.gradient }}>
-                  {b.emoji}
+                <div className="bucket-thumb" style={b.poster ? { backgroundImage: `url(${b.poster})` } : undefined}>
+                  {!b.poster && b.emoji}
                 </div>
                 <div className="bucket-info">
                   <strong>{b.result.place}</strong>
@@ -94,7 +236,7 @@ function Konto({ profile, bucket, week, onOpenItem }: { profile: UserProfile | n
                   <span className="bucket-alert">
                     {b.alert ? (
                       b.alert.triggered ? (
-                        <span className="tag hit">🔔 ausgelöst · {b.alert.triggered.channel}</span>
+                        <span className="tag hit">🔔 Alarm ausgelöst · Push gesendet</span>
                       ) : (
                         <span className="tag">🔔 Alarm unter {formatEUR(b.alert.threshold)}</span>
                       )
@@ -112,8 +254,8 @@ function Konto({ profile, bucket, week, onOpenItem }: { profile: UserProfile | n
             );
           })}
           <p className="muted small">
-            Preisbeobachtung: {week === 0 ? "startet – oben „1 Woche vorspulen“ simuliert den täglichen Preis-Job." : `${week} Woche(n) simuliert.`} Klick auf ein Ziel
-            öffnet den Deep Link in die Suche.
+            {week === 0 ? "Oben „1 Woche vorspulen“ simuliert die tägliche Preisbeobachtung." : `${week} Woche(n) Preisbeobachtung simuliert.`} Klick auf ein Ziel öffnet
+            die vorausgefüllte Suche.
           </p>
         </div>
       )}
@@ -139,77 +281,14 @@ function Sparkline({ values, threshold }: { values: number[]; threshold?: number
   );
 }
 
-const STEPS: Array<{ n: number; title: string; product: string; demo: string; real: boolean }> = [
-  { n: 1, title: "Reel per DM teilen", product: "Meta Instagram Messaging API: Webhook liefert Anhang vom Typ ig_reel inkl. URL", demo: "simuliert (Social-App links)", real: false },
-  { n: 2, title: "Signale einsammeln", product: "Bildunterschrift, Ortsmarkierung, Hashtags, Video-Frames, Audio-Transkript (Whisper)", demo: "Bildunterschrift, Ortsmarkierung, Screenshot; TikTok-Links live per oEmbed", real: true },
-  { n: 3, title: "Ziel erkennen", product: "LLM mit Structured Output (JSON-Schema): Ort, Land, Flughafen, Sicherheit, Rückfrage", demo: "echt – Claude API mit Structured Outputs", real: true },
-  { n: 4, title: "Auf buchbares Ziel mappen", product: "Ort → Region → Zielflughafen → Hotelgebiet im CHECK24-Inventar", demo: "Claude liefert IATA + Region", real: true },
-  { n: 5, title: "Preis abfragen", product: "interne CHECK24-Such-APIs (Pauschalreise, Flug + Hotel)", demo: "Fantasiepreise (deterministisch)", real: false },
-  { n: 6, title: "Konto verknüpfen", product: "Einmal-Token: Social-ID ↔ Kundenkonto, Profil + Einwilligung", demo: "simulierter Login + Onboarding", real: false },
-  { n: 7, title: "Preise beobachten", product: "täglicher Job je Bucket-List-Ziel, Regeln: unter Schwelle / X % unter Ø / Last Minute", demo: "„1 Woche vorspulen“", real: false },
-  { n: 8, title: "Benachrichtigen", product: "App-Push, E-Mail, WhatsApp (Opt-in) – DM nur im offenen 24-h-Fenster", demo: "Push-Banner auf dem Handy", real: false },
-  { n: 9, title: "Buchen", product: "Deep Link in vorausgefüllte Suche mit Attribution (utm_source=social_dm)", demo: "Mock-Ergebnisliste", real: false },
-];
-
-function Funktion() {
-  return (
-    <div className="howto">
-      <h2>Vom Reel zur Buchung</h2>
-      <ol className="steps">
-        {STEPS.map((s) => (
-          <li key={s.n}>
-            <span className="step-n">{s.n}</span>
-            <div>
-              <strong>{s.title}</strong>
-              <span className="step-product">{s.product}</span>
-              <span className={`step-demo ${s.real ? "real" : ""}`}>Demo: {s.demo}</span>
-            </div>
-          </li>
-        ))}
-      </ol>
-
-      <h3>Plattform-Grenzen (wichtig fürs Produktdesign)</h3>
-      <ul className="constraints">
-        <li>
-          <strong>24-Stunden-Fenster:</strong> Ein Business-Account darf nur bis 24 h nach der letzten Nutzernachricht automatisch antworten. Danach nur noch
-          manuell mit HUMAN_AGENT-Tag (max. 7 Tage). Für Instagram gibt es keine One-Time-Notifications → Preisalarme müssen über eigene Kanäle laufen.
-        </li>
-        <li>
-          <strong>Ausnahme Anzeigen:</strong> Chats, die über Click-to-Direct-Anzeigen starten, haben seit 28.09.2026 ein Fenster von bis zu 7 Tagen – gut für
-          eine Launch-Kampagne.
-        </li>
-        <li>
-          <strong>TikTok:</strong> Die Business Messaging API ist im EWR, der Schweiz und UK nicht verfügbar → TikTok-Nutzer teilen den Link per WhatsApp oder
-          in der App (Share-Extension).
-        </li>
-        <li>
-          <strong>Mensch erreichbar:</strong> Meta verlangt für Messaging-Apps einen Eskalationspfad zu einem menschlichen Mitarbeiter.
-        </li>
-        <li>
-          <strong>Datenschutz:</strong> Hinweis zur Verarbeitung in der ersten Antwort, Videos nur verarbeiten und nicht speichern, Einwilligung für
-          Benachrichtigungen beim Verknüpfen.
-        </li>
-      </ul>
-
-      <h3>Funnel-KPIs für den MVP</h3>
-      <div className="funnel">
-        {["Reel geteilt", "Ziel erkannt", "Konto verknüpft", "Alarm gesetzt", "Alarm geklickt", "Buchung"].map((s, i) => (
-          <div key={s} className="funnel-step" style={{ width: `${100 - i * 11}%` }}>
-            {s}
-          </div>
-        ))}
-      </div>
-      <p className="muted small">Größtes Risiko: Abbruch beim Konto-Login. Deshalb zuerst Wert zeigen (Ziel + Preis), Login erst beim Speichern.</p>
-    </div>
-  );
-}
+// ---------- Log ----------
 
 function Log({ log }: { log: AnalyzeResponse[] }) {
   if (log.length === 0)
     return (
       <div className="empty">
         <div className="empty-emoji">🧠</div>
-        <p>Hier erscheint, was Claude aus jedem geteilten Beitrag herausliest – als strukturiertes JSON.</p>
+        <p>Hier erscheint jede Analyse: Input, erkannte Signale und das strukturierte JSON, das Claude zurückgibt.</p>
       </div>
     );
   return (
@@ -217,10 +296,18 @@ function Log({ log }: { log: AnalyzeResponse[] }) {
       {log.map((l, i) => (
         <div key={i} className="log-entry">
           <div className="log-head">
-            <span className={`tag ${l.source === "claude" ? "hit" : "off"}`}>{l.source === "claude" ? `Claude · ${l.model}` : "Offline-Fallback"}</span>
+            <span className={`tag ${l.source === "claude" ? "hit" : "off"}`}>{l.source === "claude" ? `Claude · ${l.model}` : "Offline-Antwort"}</span>
             <span className="muted">{(l.latencyMs / 1000).toFixed(1)} s</span>
             <span className={`tag status-${l.result.status}`}>{l.result.status}</span>
           </div>
+          {l.frames && l.frames.length > 0 && (
+            <div className="log-frames">
+              {l.frames.map((f, j) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={j} src={f} alt="" />
+              ))}
+            </div>
+          )}
           {l.inputSummary && <div className="log-input">Input: {l.inputSummary}</div>}
           {l.note && <div className="log-note">ℹ️ {l.note}</div>}
           <div className="log-signals">

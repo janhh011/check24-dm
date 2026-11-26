@@ -26,11 +26,15 @@ const BASE_BY_COUNTRY: Record<string, number> = {
   TN: 499,
   NO: 1099,
   IS: 1199,
+  CN: 1149,
+  BR: 1449,
+  GB: 579,
 };
 
 const ORIGIN_FACTOR: Record<string, number> = { BER: 1, HAM: 1.02, MUC: 0.97, FRA: 0.98, DUS: 0.99, CGN: 0.99, LEJ: 1.04 };
 
 const MONTH_FACTOR: Record<string, number> = {
+  April: 0.9,
   Mai: 0.92,
   Juni: 1,
   Juli: 1.18,

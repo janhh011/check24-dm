@@ -63,8 +63,11 @@ export default function DeepLinkScreen({
       <div className="dl-list">
         {hotels.map((ho, i) => (
           <div key={i} className="dl-hotel">
-            <div className="dl-img" style={{ background: item.gradient }}>
-              {item.emoji}
+            <div
+              className="dl-img"
+              style={item.poster ? { backgroundImage: `url(${item.poster})`, backgroundPosition: `center ${20 + i * 30}%` } : { background: "#3d7bd9" }}
+            >
+              {!item.poster && item.emoji}
             </div>
             <div className="dl-info">
               <strong>{ho.name}</strong>

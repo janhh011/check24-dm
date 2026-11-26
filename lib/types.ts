@@ -24,6 +24,7 @@ export interface DestinationResult {
   bestMonths: string[];
   confidence: number; // 0..1
   signals: string[]; // woran das Ziel erkannt wurde
+  spots: string[]; // konkrete Orte/Sehenswürdigkeiten, die im Video zu sehen sind
   candidates: Candidate[]; // bei status = ambiguous
   clarifyingQuestion: string;
   teaser: string; // ein lockerer Satz zum Ort, im CHECK24-Ton
@@ -32,10 +33,10 @@ export interface DestinationResult {
 export interface AnalyzeRequest {
   reelId?: string;
   url?: string;
-  caption?: string;
-  locationTag?: string;
+  caption?: string; // Bildunterschrift (kann im Demo-Modus „nur Bilder“ weggelassen werden)
+  frames?: string[]; // Einzelbilder aus dem Video als data:image/jpeg;base64,…
   imageBase64?: string; // data URL eines Screenshots
-  userHint?: string; // Korrektur des Nutzers ("Falscher Ort" → "das ist Kotor")
+  userHint?: string; // Korrektur/Antwort des Nutzers
 }
 
 export interface AnalyzeResponse {
@@ -44,19 +45,21 @@ export interface AnalyzeResponse {
   model?: string;
   latencyMs: number;
   inputSummary: string;
+  frameCount: number;
+  usedCaption: boolean;
   note?: string;
+  frames?: string[]; // nur clientseitig angehängt, für die Anzeige
 }
 
 export interface Reel {
   id: string;
   creator: string;
   caption: string;
-  locationTag?: string;
-  audio: string;
+  video: string;
+  poster: string;
   likes: string;
-  gradient: string;
+  comments: string;
   emoji: string;
-  hint: string; // Beschreibung für die Demo-Steuerung
 }
 
 export interface Offer {
@@ -85,8 +88,8 @@ export interface BucketItem {
   offer: Offer;
   addedAt: number;
   reelCaption: string;
+  poster?: string;
   emoji: string;
-  gradient: string;
   alert?: PriceAlert;
   priceHistory: number[];
 }

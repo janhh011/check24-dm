@@ -1,19 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { DEMO_REELS } from "@/lib/reels";
+import { extractFrames } from "@/lib/frames";
 import { DEFAULT_PROFILE, destinationKey, formatEUR, quoteOffer, simulateWeeks } from "@/lib/pricing";
 import type { AnalyzeRequest, AnalyzeResponse, BucketItem, DestinationResult, Offer, Reel, UserProfile } from "@/lib/types";
 import AccountPanel from "./AccountPanel";
 import LoginSheet from "./LoginSheet";
 import DeepLinkScreen from "./DeepLinkScreen";
+import ReelsFeed from "./ReelsFeed";
 
 // ---------- Typen für den Chat ----------
 
-interface Visuals {
+export interface Visuals {
   caption: string;
   emoji: string;
-  gradient: string;
+  poster?: string;
 }
 
 type Chip =
@@ -28,6 +29,7 @@ type Msg =
   | { id: string; from: "user"; kind: "image"; src: string; text?: string }
   | { id: string; from: "bot"; kind: "text"; text: string }
   | { id: string; from: "bot"; kind: "typing" }
+  | { id: string; from: "bot"; kind: "frames"; frames: string[]; total: number; done: boolean }
   | { id: string; from: "bot"; kind: "result"; result: DestinationResult; offer: Offer; visuals: Visuals; used?: boolean }
   | { id: string; from: "bot"; kind: "chips"; chips: Chip[]; used?: boolean }
   | { id: string; from: "bot"; kind: "connect" }
@@ -40,16 +42,22 @@ interface Banner {
   body: string;
 }
 
+export interface LastAnalysis {
+  frames: string[];
+  resp: AnalyzeResponse;
+  visuals: Visuals;
+}
+
 const DAY = 86_400_000;
+const FRAME_COUNT = 8;
 let idCounter = 0;
 const uid = (p = "m") => `${p}${Date.now().toString(36)}${(idCounter++).toString(36)}`;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const round10 = (n: number) => Math.round(n / 10) * 10 - 1;
 
 const WELCOME: Msg[] = [
-  { id: "w1", from: "system", kind: "note", text: "Demo: Du bist Nutzer:in einer Social-Media-App und schreibst dem CHECK24-Account." },
   {
-    id: "w2",
+    id: "w1",
     from: "bot",
     kind: "text",
     text: "Hey 👋 Schick mir einfach ein Reel von einem Ort, an den du willst – ich finde raus, wo das ist, was es kostet, und sag dir Bescheid, wenn’s günstiger wird.",
@@ -62,25 +70,27 @@ export default function Demo() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [bucket, setBucket] = useState<BucketItem[]>([]);
   const [log, setLog] = useState<AnalyzeResponse[]>([]);
+  const [last, setLast] = useState<LastAnalysis | null>(null);
   const [mode, setMode] = useState<{ mode: string; model: string } | null>(null);
-  const [screen, setScreen] = useState<"chat" | "feed" | "login" | "deeplink">("chat");
+  const [screen, setScreen] = useState<"feed" | "chat" | "login" | "deeplink">("feed");
   const [deepLinkItem, setDeepLinkItem] = useState<string | null>(null);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [simOffset, setSimOffset] = useState(0);
   const [week, setWeek] = useState(0);
-  const [dmUntil, setDmUntil] = useState(0);
   const [input, setInput] = useState("");
   const [attachment, setAttachment] = useState<string | null>(null);
   const [awaitingHint, setAwaitingHint] = useState(false);
+  const [useCaption, setUseCaption] = useState(true);
+  const [unread, setUnread] = useState(0);
 
   const lastReq = useRef<{ req: AnalyzeRequest; visuals: Visuals } | null>(null);
   const pending = useRef<{ resultMsgId: string; withAlert: boolean } | null>(null);
   const results = useRef<Record<string, { result: DestinationResult; visuals: Visuals }>>({});
   const chatEnd = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-
-  const simNow = useCallback(() => Date.now() + simOffset, [simOffset]);
+  const screenRef = useRef(screen);
+  screenRef.current = screen;
 
   useEffect(() => {
     fetch("/api/analyze")
@@ -91,26 +101,34 @@ export default function Demo() {
 
   useEffect(() => {
     chatEnd.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [msgs]);
+  }, [msgs, screen]);
 
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => setToast(null), 3500);
+    const t = setTimeout(() => setToast(null), 3000);
     return () => clearTimeout(t);
   }, [toast]);
 
-  const push = (...m: Msg[]) => setMsgs((prev) => [...prev, ...m]);
-  const markUsed = (id: string) =>
-    setMsgs((prev) => prev.map((m) => (m.id === id && (m.kind === "chips" || m.kind === "result") ? { ...m, used: true } : m)));
-  const openDmWindow = () => setDmUntil(Date.now() + simOffset + DAY);
+  const push = useCallback((...m: Msg[]) => {
+    setMsgs((prev) => [...prev, ...m]);
+    if (screenRef.current !== "chat" && m.some((x) => x.from === "bot" && x.kind !== "typing")) setUnread((u) => u + 1);
+  }, []);
+  const patch = (id: string, fn: (m: Msg) => Msg) => setMsgs((prev) => prev.map((m) => (m.id === id ? fn(m) : m)));
+  const markUsed = (id: string) => patch(id, (m) => (m.kind === "chips" || m.kind === "result" ? { ...m, used: true } : m));
+
+  function goChat() {
+    screenRef.current = "chat"; // sofort setzen, damit direkt folgende Nachrichten nicht als ungelesen zählen
+    setScreen("chat");
+    setUnread(0);
+  }
 
   // ---------- Analyse ----------
 
-  async function analyze(req: AnalyzeRequest, visuals: Visuals) {
+  async function analyze(req: AnalyzeRequest, visuals: Visuals, framesMsgId?: string) {
     lastReq.current = { req, visuals };
     setBusy(true);
     const typingId = uid("t");
-    push({ id: typingId, from: "bot", kind: "typing" });
+    if (!framesMsgId) push({ id: typingId, from: "bot", kind: "typing" });
     const t0 = Date.now();
     let resp: AnalyzeResponse | null = null;
     let error: string | null = null;
@@ -127,15 +145,18 @@ export default function Demo() {
       error = "Server nicht erreichbar";
     }
     const elapsed = Date.now() - t0;
-    if (elapsed < 1100) await sleep(1100 - elapsed); // Tipp-Indikator sichtbar lassen
+    if (elapsed < 1200) await sleep(1200 - elapsed); // Analyse sichtbar lassen
     setMsgs((prev) => prev.filter((m) => m.id !== typingId));
+    if (framesMsgId) patch(framesMsgId, (m) => (m.kind === "frames" ? { ...m, done: true } : m));
     setBusy(false);
 
     if (error || !resp) {
       push({ id: uid(), from: "bot", kind: "text", text: `Hoppla, da ist was schiefgelaufen (${error}). Versuch’s gleich nochmal 🙏` });
       return;
     }
-    setLog((prev) => [resp!, ...prev]);
+    const withFrames: AnalyzeResponse = { ...resp, frames: req.frames };
+    setLog((prev) => [withFrames, ...prev]);
+    setLast({ frames: req.frames ?? [], resp: withFrames, visuals });
     handleResult(resp.result, visuals);
   }
 
@@ -145,7 +166,6 @@ export default function Demo() {
       const id = uid("r");
       results.current[id] = { result: r, visuals };
       const offer = quoteOffer(r, profile ?? DEFAULT_PROFILE);
-      // Liegt das Ziel schon auf der Bucket List, den aktuell beobachteten Preis zeigen
       const known = bucket.find((b) => destinationKey(b.result) === destinationKey(r));
       if (known) offer.pricePP = known.priceHistory[known.priceHistory.length - 1];
       push({ id, from: "bot", kind: "result", result: r, offer, visuals });
@@ -158,7 +178,7 @@ export default function Demo() {
           from: "bot",
           kind: "chips",
           chips: [
-            ...r.candidates.slice(0, 3).map((c) => ({ label: `${c.place}, ${c.country}`, kind: "candidate" as const, value: `${c.place}` })),
+            ...r.candidates.slice(0, 3).map((c) => ({ label: `${c.place}, ${c.country}`, kind: "candidate" as const, value: `${c.place}, ${c.country}` })),
             { label: "✏️ Anderer Ort …", kind: "otherPlace" as const },
           ],
         },
@@ -176,22 +196,35 @@ export default function Demo() {
 
   // ---------- Nutzeraktionen ----------
 
-  function shareReel(reel: Reel) {
+  async function shareReel(reel: Reel) {
     if (busy) return;
-    setScreen("chat");
-    openDmWindow();
-    push({ id: uid(), from: "user", kind: "reel", reel });
-    analyze({ reelId: reel.id }, { caption: reel.caption, emoji: reel.emoji, gradient: reel.gradient });
+    goChat();
+    setBusy(true);
+    const visuals: Visuals = { caption: reel.caption, emoji: reel.emoji, poster: reel.poster };
+    const framesId = uid("f");
+    push(
+      { id: uid(), from: "user", kind: "reel", reel },
+      { id: uid(), from: "bot", kind: "text", text: "Uh, schick! Ich schau mir das Video kurz an 👀" },
+      { id: framesId, from: "bot", kind: "frames", frames: [], total: FRAME_COUNT, done: false },
+    );
+    let frames: string[] = [];
+    try {
+      frames = await extractFrames(reel.video, FRAME_COUNT, 384, (f) =>
+        patch(framesId, (m) => (m.kind === "frames" ? { ...m, frames: [...m.frames, f] } : m)),
+      );
+    } catch {
+      patch(framesId, (m) => (m.kind === "frames" ? { ...m, done: true } : m));
+    }
+    await analyze({ reelId: reel.id, caption: useCaption ? reel.caption : undefined, frames }, visuals, frames.length ? framesId : undefined);
   }
 
   function sendInput() {
     const text = input.trim();
     if (busy || (!text && !attachment)) return;
-    openDmWindow();
     if (attachment) push({ id: uid(), from: "user", kind: "image", src: attachment, text: text || undefined });
     else push({ id: uid(), from: "user", kind: "text", text });
 
-    const visuals: Visuals = { caption: text || "Screenshot", emoji: "📍", gradient: "linear-gradient(160deg,#8ec5fc,#3d7bd9)" };
+    const visuals: Visuals = { caption: text || "Screenshot", emoji: "📍", poster: attachment ?? undefined };
     if (awaitingHint && lastReq.current && !attachment) {
       analyze({ ...lastReq.current.req, userHint: text }, lastReq.current.visuals);
     } else if (/^https?:\/\//i.test(text)) {
@@ -219,13 +252,12 @@ export default function Demo() {
   function onChip(msgId: string, chip: Chip) {
     if (busy) return;
     markUsed(msgId);
-    openDmWindow();
     if (chip.kind === "candidate") {
       push({ id: uid(), from: "user", kind: "text", text: chip.label });
       if (lastReq.current) analyze({ ...lastReq.current.req, userHint: chip.value }, lastReq.current.visuals);
     } else if (chip.kind === "otherPlace") {
       setAwaitingHint(true);
-      push({ id: uid(), from: "bot", kind: "text", text: "Klar! Schreib mir einfach, wo das ist – oder schick einen Screenshot mit mehr Infos." });
+      push({ id: uid(), from: "bot", kind: "text", text: "Klar! Schreib mir einfach, wo das ist." });
     } else if (chip.kind === "threshold") {
       push({ id: uid(), from: "user", kind: "text", text: chip.label });
       setAlert(chip.itemId, chip.value);
@@ -241,9 +273,8 @@ export default function Demo() {
     if (busy) return;
     const entry = results.current[msgId];
     if (!entry) return;
-    openDmWindow();
+    markUsed(msgId);
     if (action === "wrong") {
-      markUsed(msgId);
       setAwaitingHint(true);
       push(
         { id: uid(), from: "user", kind: "text", text: "Falscher Ort" },
@@ -251,7 +282,6 @@ export default function Demo() {
       );
       return;
     }
-    markUsed(msgId);
     push({ id: uid(), from: "user", kind: "text", text: action === "save" ? "Auf Bucket List ⭐" : "Preisalarm setzen 🔔" });
     if (!profile) {
       pending.current = { resultMsgId: msgId, withAlert: action === "alert" };
@@ -283,8 +313,8 @@ export default function Demo() {
         offer,
         addedAt: Date.now() + simOffset,
         reelCaption: entry.visuals.caption,
+        poster: entry.visuals.poster,
         emoji: entry.visuals.emoji,
-        gradient: entry.visuals.gradient,
         priceHistory: [offer.pricePP],
       };
       setBucket((prev) => [item, ...prev]);
@@ -315,14 +345,14 @@ export default function Demo() {
       id: uid(),
       from: "bot",
       kind: "text",
-      text: `🔔 Preisalarm aktiv: Ich melde mich, sobald ${item?.result.place ?? "das Ziel"} unter ${formatEUR(threshold)} fällt – per Push in der CHECK24-App und per E-Mail. (Hier im Chat darf ich dir nach 24 Stunden nicht mehr automatisch schreiben.)`,
+      text: `🔔 Preisalarm aktiv! Ich melde mich per Push in der CHECK24-App, sobald ${item?.result.place ?? "das Ziel"} unter ${formatEUR(threshold)} fällt. Bis dahin: weiter scrollen 😉`,
     });
   }
 
   function onLoginDone(p: UserProfile) {
     setProfile(p);
-    setScreen("chat");
-    push({ id: uid(), from: "system", kind: "note", text: `Konto verbunden: ${p.email} · Social-ID ↔ CHECK24-Kundenkonto verknüpft` });
+    goChat();
+    push({ id: uid(), from: "system", kind: "note", text: `CHECK24-Konto verbunden: ${p.email}` });
     const pend = pending.current;
     pending.current = null;
     if (pend) setTimeout(() => addToBucket(pend.resultMsgId, p, pend.withAlert), 350);
@@ -334,15 +364,13 @@ export default function Demo() {
     const newWeek = week + 1;
     const newOffset = simOffset + 7 * DAY;
     const nowSim = Date.now() + newOffset;
-    const dmOpen = nowSim < dmUntil;
     const newBanners: Banner[] = [];
     const next = bucket.map((b) => {
-      const last = b.priceHistory[b.priceHistory.length - 1];
-      const [p] = simulateWeeks(last, b.offer.basePrice, 1, `${b.id}-${newWeek}`, !!b.alert && !b.alert.triggered);
+      const lastPrice = b.priceHistory[b.priceHistory.length - 1];
+      const [p] = simulateWeeks(lastPrice, b.offer.basePrice, 1, `${b.id}-${newWeek}`, !!b.alert && !b.alert.triggered);
       const updated: BucketItem = { ...b, priceHistory: [...b.priceHistory, p] };
       if (b.alert && !b.alert.triggered && p <= b.alert.threshold) {
-        const channel = dmOpen ? "Direktnachricht (24-h-Fenster offen)" : "App-Push + E-Mail";
-        updated.alert = { ...b.alert, triggered: { price: p, at: nowSim, channel } };
+        updated.alert = { ...b.alert, triggered: { price: p, at: nowSim, channel: "App-Push" } };
         const pct = Math.round((1 - p / b.offer.pricePP) * 100);
         newBanners.push({
           id: uid("n"),
@@ -359,8 +387,7 @@ export default function Demo() {
     if (newBanners.length) {
       setToast(null);
       setBanners((prev) => [...newBanners, ...prev]);
-    }
-    else if (bucket.length) setToast(`Woche ${newWeek}: Preise aktualisiert – noch kein Alarm ausgelöst`);
+    } else if (bucket.length) setToast(`Woche ${newWeek}: Preise aktualisiert – noch kein Alarm ausgelöst`);
     else setToast("Noch nichts auf der Bucket List – erst ein Reel teilen und speichern");
   }
 
@@ -369,14 +396,15 @@ export default function Demo() {
     setProfile(null);
     setBucket([]);
     setLog([]);
+    setLast(null);
     setBanners([]);
-    setScreen("chat");
+    setScreen("feed");
     setSimOffset(0);
     setWeek(0);
-    setDmUntil(0);
     setAwaitingHint(false);
     setInput("");
     setAttachment(null);
+    setUnread(0);
     pending.current = null;
     lastReq.current = null;
     results.current = {};
@@ -388,10 +416,8 @@ export default function Demo() {
     setBanners((prev) => prev.filter((b) => b.itemId !== itemId));
   }
 
-  const now = Date.now() + simOffset;
-  const dmOpen = now < dmUntil;
-  const dmHoursLeft = Math.max(0, Math.ceil((dmUntil - now) / 3_600_000));
   const deepItem = bucket.find((b) => b.id === deepLinkItem) ?? null;
+  const showNav = screen === "feed" || screen === "chat";
 
   // ---------- Render ----------
 
@@ -402,18 +428,19 @@ export default function Demo() {
           <span className="wordmark">CHECK24</span>
           <span className="divider" />
           <span className="product">Reel-to-Trip</span>
-          <span className="badge-concept">Konzept-Prototyp</span>
+          <span className="badge-concept">Konzept</span>
+          <span className="byline">Inoffizieller Prototyp von Jan-Hendrik Höltkemeier</span>
         </div>
         <div className="controls">
-          <span className={`mode ${mode?.mode === "claude" ? "live" : "offline"}`}>
-            {mode ? (mode.mode === "claude" ? `● Claude live · ${mode.model}` : "● Offline-Modus (vorbereitete Antworten)") : "…"}
+          <span className={`mode ${mode?.mode === "claude" ? "mode-live" : "mode-offline"}`}>
+            {mode ? (mode.mode === "claude" ? `● KI live · ${mode.model}` : "● Offline-Modus") : "…"}
           </span>
           <span className="simclock">📅 {week === 0 ? "Heute" : `+${week} Woche${week > 1 ? "n" : ""}`}</span>
           <button className="btn btn-yellow" onClick={fastForward} title="Simuliert eine Woche Preisbeobachtung">
             ⏩ 1 Woche vorspulen
           </button>
           <button className="btn btn-ghost" onClick={reset}>
-            ↺ Zurücksetzen
+            ↺ Neu starten
           </button>
         </div>
       </header>
@@ -442,98 +469,103 @@ export default function Demo() {
               </div>
             )}
 
-            {screen === "deeplink" && deepItem ? (
-              <DeepLinkScreen item={deepItem} profile={profile ?? DEFAULT_PROFILE} onBack={() => setScreen("chat")} onBook={() => setToast("Demo-Ende: Hier ginge es in die normale CHECK24-Buchungsstrecke ✈️")} />
-            ) : (
-              <>
-                <div className="chat-header">
-                  <div className="avatar">C24</div>
-                  <div className="chat-title">
-                    <strong>
-                      check24 <span className="verified">✔</span>
-                    </strong>
-                    <span className={`dm-window ${dmOpen ? "open" : "closed"}`}>
-                      {dmOpen ? `Antwortfenster offen · noch ${dmHoursLeft} h` : dmUntil ? "Antwortfenster geschlossen (24 h vorbei)" : "Business-Account"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="chat">
-                  {msgs.map((m) => (
-                    <MessageView key={m.id} m={m} onChip={onChip} onResultAction={onResultAction} onConnect={() => setScreen("login")} busy={busy} profile={profile} />
-                  ))}
-                  <div ref={chatEnd} />
-                </div>
-
-                <div className="composer">
-                  {attachment && (
-                    <div className="attach-preview">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={attachment} alt="Anhang" />
-                      <button onClick={() => setAttachment(null)}>✕</button>
+            <div className="screen">
+              {screen === "deeplink" && deepItem ? (
+                <DeepLinkScreen
+                  item={deepItem}
+                  profile={profile ?? DEFAULT_PROFILE}
+                  onBack={goChat}
+                  onBook={() => setToast("Demo-Ende: Hier ginge es in die normale CHECK24-Buchungsstrecke ✈️")}
+                />
+              ) : screen === "feed" ? (
+                <ReelsFeed onShare={shareReel} onToast={setToast} disabled={busy} />
+              ) : (
+                <div className="chat-screen">
+                  <div className="chat-header">
+                    <button className="back" onClick={() => setScreen("feed")}>
+                      ‹
+                    </button>
+                    <div className="avatar">C24</div>
+                    <div className="chat-title">
+                      <strong>
+                        check24 <span className="verified">✔</span>
+                      </strong>
+                      <span className="sub">Reise-Assistent · antwortet sofort</span>
                     </div>
-                  )}
-                  <div className="composer-row">
-                    <button className="icon-btn share" onClick={() => setScreen("feed")} title="Reel aus dem Feed teilen" disabled={busy}>
-                      🎬
-                    </button>
-                    <button className="icon-btn" onClick={() => fileRef.current?.click()} title="Screenshot anhängen" disabled={busy}>
-                      📎
-                    </button>
-                    <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={onFile} />
-                    <input
-                      className="text-in"
-                      value={input}
-                      placeholder={awaitingHint ? "Wo ist das? z. B. „Kotor“" : "Nachricht, Link oder Bildunterschrift …"}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && sendInput()}
-                      disabled={busy}
-                    />
-                    <button className="send" onClick={sendInput} disabled={busy || (!input.trim() && !attachment)}>
-                      ➤
-                    </button>
                   </div>
-                </div>
-              </>
-            )}
 
-            {screen === "feed" && (
-              <div className="sheet">
-                <div className="sheet-head">
-                  <strong>Gespeicherte Reels</strong>
-                  <button onClick={() => setScreen("chat")}>✕</button>
-                </div>
-                <p className="sheet-sub">Tippe auf „Senden“, um ein Reel an @check24 zu schicken.</p>
-                <div className="reel-list">
-                  {DEMO_REELS.map((r) => (
-                    <div key={r.id} className="reel-row">
-                      <div className="reel-thumb" style={{ background: r.gradient }}>
-                        <span>{r.emoji}</span>
-                        <span className="play">▶</span>
+                  <div className="chat">
+                    {msgs.map((m) => (
+                      <MessageView key={m.id} m={m} onChip={onChip} onResultAction={onResultAction} onConnect={() => setScreen("login")} busy={busy} profile={profile} />
+                    ))}
+                    <div ref={chatEnd} />
+                  </div>
+
+                  <div className="composer">
+                    {attachment && (
+                      <div className="attach-preview">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={attachment} alt="Anhang" />
+                        <button onClick={() => setAttachment(null)}>✕</button>
                       </div>
-                      <div className="reel-info">
-                        <span className="reel-creator">{r.creator}</span>
-                        <span className="reel-caption">{r.caption}</span>
-                        <span className="reel-hint">{r.hint}</span>
-                      </div>
-                      <button className="btn btn-blue small" onClick={() => shareReel(r)}>
-                        Senden
+                    )}
+                    <div className="composer-row">
+                      <button className="icon-btn" onClick={() => fileRef.current?.click()} title="Screenshot anhängen" disabled={busy}>
+                        📎
+                      </button>
+                      <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={onFile} />
+                      <input
+                        className="text-in"
+                        value={input}
+                        placeholder={awaitingHint ? "Wo ist das? z. B. „Canterbury“" : "Nachricht, Link oder Bildunterschrift …"}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && sendInput()}
+                        disabled={busy}
+                      />
+                      <button className="send" onClick={sendInput} disabled={busy || (!input.trim() && !attachment)}>
+                        ➤
                       </button>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </div>
+              )}
+            </div>
+
+            {showNav && (
+              <nav className="phone-nav">
+                <button className={screen === "feed" ? "on" : ""} onClick={() => setScreen("feed")}>
+                  <span>🎬</span>
+                  <small>Reels</small>
+                </button>
+                <button className={screen === "chat" ? "on" : ""} onClick={goChat}>
+                  <span>
+                    ✉️{unread > 0 && <i className="nav-badge">{unread}</i>}
+                  </span>
+                  <small>Nachrichten</small>
+                </button>
+              </nav>
             )}
 
-            {screen === "login" && <LoginSheet onCancel={() => setScreen("chat")} onDone={onLoginDone} />}
+            {screen === "login" && <LoginSheet onCancel={goChat} onDone={onLoginDone} />}
 
             {toast && <div className="toast">{toast}</div>}
           </div>
-          <p className="phone-caption">Kundensicht: Social-App-DM mit dem CHECK24-Account</p>
+          <p className="phone-caption">
+            {screen === "feed" ? "Scrollen wie gewohnt – bei einem Traumziel auf ➤ Teilen → check24" : "Kundensicht: Direktnachricht an den CHECK24-Account"}
+          </p>
         </section>
 
-        {/* ---------- Konto & Erklärung ---------- */}
-        <AccountPanel profile={profile} bucket={bucket} log={log} week={week} onOpenItem={openDeepLink} />
+        {/* ---------- Konto & KI ---------- */}
+        <AccountPanel
+          profile={profile}
+          bucket={bucket}
+          log={log}
+          last={last}
+          week={week}
+          useCaption={useCaption}
+          onToggleCaption={() => setUseCaption((v) => !v)}
+          onOpenItem={openDeepLink}
+        />
       </main>
     </div>
   );
@@ -569,14 +601,39 @@ function MessageView({
       </div>
     );
 
+  if (m.kind === "frames")
+    return (
+      <div className="row bot">
+        <div className={`frames-card ${m.done ? "done" : "scanning"}`}>
+          <div className="frames-grid">
+            {Array.from({ length: m.total }).map((_, i) =>
+              m.frames[i] ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={i} src={m.frames[i]} alt={`Bild ${i + 1}`} />
+              ) : (
+                <span key={i} className="frame-ph" />
+              ),
+            )}
+            {!m.done && <div className="scanline" />}
+          </div>
+          <span className="frames-label">
+            {m.done
+              ? `✓ ${m.frames.length} Bilder analysiert`
+              : m.frames.length < m.total
+                ? `🎞️ Bilder aus dem Video ziehen … ${m.frames.length}/${m.total}`
+                : "🧠 KI erkennt Texteinblendungen, Wahrzeichen & Landschaft …"}
+          </span>
+        </div>
+      </div>
+    );
+
   if (m.kind === "reel")
     return (
       <div className="row user">
         <div className="shared-reel">
-          <div className="shared-thumb" style={{ background: m.reel.gradient }}>
-            <span className="emoji">{m.reel.emoji}</span>
+          <div className="shared-thumb" style={{ backgroundImage: `url(${m.reel.poster})` }}>
             <span className="play">▶</span>
-            {m.reel.locationTag && <span className="loc">📍 {m.reel.locationTag}</span>}
+            <span className="reel-icon">🎬 Reel</span>
           </div>
           <div className="shared-meta">
             <strong>{m.reel.creator}</strong>
@@ -633,9 +690,12 @@ function MessageView({
   return (
     <div className="row bot">
       <div className="result-card">
-        <div className="result-hero" style={{ background: m.visuals.gradient }}>
-          <span className="emoji">{m.visuals.emoji}</span>
-          <span className="conf">{Math.round(r.confidence * 100)} % sicher</span>
+        <div
+          className="result-hero"
+          style={m.visuals.poster ? { backgroundImage: `url(${m.visuals.poster})` } : { background: "linear-gradient(160deg,#8ec5fc,#3d7bd9)" }}
+        >
+          {!m.visuals.poster && <span className="emoji">{m.visuals.emoji}</span>}
+          <span className="conf">🧠 {Math.round(r.confidence * 100)} % sicher</span>
         </div>
         <div className="result-body">
           <div className="result-place">📍 {r.place}</div>
@@ -644,6 +704,14 @@ function MessageView({
             {r.country}
           </div>
           {r.teaser && <p className="result-teaser">{r.teaser}</p>}
+          {r.spots.length > 0 && (
+            <div className="spots">
+              <span>Im Video erkannt:</span>
+              {r.spots.slice(0, 6).map((s) => (
+                <i key={s}>{s}</i>
+              ))}
+            </div>
+          )}
           <div className="offer">
             <div>
               <span className="offer-from">Pauschalreise ab</span>

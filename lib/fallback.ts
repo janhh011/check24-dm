@@ -3,135 +3,167 @@ import type { AnalyzeRequest, DestinationResult } from "./types";
 // Offline-Modus: vorbereitete Antworten für die Demo-Reels, damit die Präsentation auch ohne
 // API-Key oder WLAN funktioniert. Für eigene Eingaben gibt es eine einfache Stichwortsuche.
 
-const base: Omit<DestinationResult, "place" | "region" | "country" | "countryCode"> = {
+const base: DestinationResult = {
   status: "identified",
+  place: "",
+  region: "",
+  country: "",
+  countryCode: "",
   nearestAirport: null,
-  tripType: "Strand",
+  tripType: "Mix",
   bestMonths: [],
   confidence: 0.9,
   signals: [],
+  spots: [],
   candidates: [],
   clarifyingQuestion: "",
   teaser: "",
 };
 
 const PRESETS: Record<string, DestinationResult> = {
-  ksamil: {
+  mallorca: {
     ...base,
-    place: "Ksamil",
-    region: "Albanische Riviera, Region Vlora",
+    place: "Mallorca",
+    region: "Balearen",
+    country: "Spanien",
+    countryCode: "ES",
+    nearestAirport: { iata: "PMI", name: "Palma de Mallorca" },
+    tripType: "Strand",
+    bestMonths: ["Mai", "Juni", "September"],
+    confidence: 0.98,
+    signals: ["Texteinblendungen „Caló des Moro“, „Valldemossa“, „Deià“, „Sóller“", "Hashtags #mallorca #spaintravel", "türkise Buchten, Natursteindörfer"],
+    spots: ["Caló des Moro", "Valldemossa", "Deià", "Sóller", "Restaurant Illeta", "Gran Folies Beach Club"],
+    teaser: "Türkise Buchten, Bergdörfer und die Holzbahn nach Sóller – Mallorca kann so viel mehr als Ballermann.",
+  },
+  shanghai: {
+    ...base,
+    place: "Shanghai",
+    region: "Pudong & The Bund",
+    country: "China",
+    countryCode: "CN",
+    nearestAirport: { iata: "PVG", name: "Shanghai Pudong" },
+    tripType: "Stadt",
+    bestMonths: ["April", "Mai", "Oktober"],
+    confidence: 0.97,
+    signals: ["Oriental Pearl Tower im Bild", "Shanghai Tower + World Financial Center", "Bildunterschrift nennt Shanghai"],
+    spots: ["Oriental Pearl Tower", "Shanghai Tower", "The Bund", "Yan’an-Hochstraße"],
+    teaser: "Neon-Skyline am Huangpu – Shanghai fühlt sich wirklich an wie 2088. 🌃",
+  },
+  albanien: {
+    ...base,
+    place: "Albanische Riviera",
+    region: "Küste zwischen Vlora und Saranda",
     country: "Albanien",
     countryCode: "AL",
-    nearestAirport: { iata: "CFU", name: "Korfu (Griechenland), dann Fähre nach Saranda" },
-    tripType: "Strand",
+    nearestAirport: { iata: "TIA", name: "Tirana, dann ca. 3 h Fahrt" },
+    tripType: "Natur",
     bestMonths: ["Juni", "September"],
-    confidence: 0.97,
-    signals: ["Ortsmarkierung „Ksamil“", "Flaggen-Emoji 🇦🇱", "Hashtag #balkans"],
-    teaser: "Türkises Wasser, kleine Inseln zum Rüberschwimmen – die Malediven des Balkans.",
+    confidence: 0.86,
+    signals: ["Texteinblendung „Reise nach ALBANIEN“", "albanisches Kennzeichen", "Küstenpanorama, Kiesstrand, Wasserfall"],
+    spots: ["Llogara-Pass", "Kiesstrände am Ionischen Meer", "Wasserfall in der Schlucht"],
+    teaser: "Wilde Küste, Bergstraßen und leere Strände – Albanien ist Roadtrip-Abenteuer pur. 🚙",
   },
-  kotor: {
-    ...base,
-    place: "Kotor",
-    region: "Bucht von Kotor",
-    country: "Montenegro",
-    countryCode: "ME",
-    nearestAirport: { iata: "TIV", name: "Tivat" },
-    tripType: "Kultur",
-    bestMonths: ["Mai", "Juni", "September"],
-    confidence: 0.92,
-    signals: ["Hashtag #montenegro", "„Bucht wie ein Fjord“", "„1.350 Stufen zur Festung“ (San Giovanni)"],
-    teaser: "Mittelalterliche Altstadt direkt an einer fjordartigen Bucht – perfekt für Kultur + Strand.",
-  },
-  navagio: {
-    ...base,
-    place: "Navagio-Strand (Shipwreck Beach)",
-    region: "Zakynthos, Ionische Inseln",
-    country: "Griechenland",
-    countryCode: "GR",
-    nearestAirport: { iata: "ZTH", name: "Zakynthos" },
-    tripType: "Strand",
-    bestMonths: ["Mai", "Juni", "September", "Oktober"],
-    confidence: 0.9,
-    signals: ["„berühmtes Schiffswrack, nur per Boot“", "#griechenland", "#ionischesmeer"],
-    teaser: "Das Schiffswrack in der Bucht ist eines der meistfotografierten Motive Griechenlands.",
-  },
-  turquoise: {
+  england: {
     ...base,
     status: "ambiguous",
-    place: "",
-    region: "",
-    country: "",
-    countryCode: "",
-    tripType: "Strand",
-    confidence: 0.3,
-    signals: ["„türkisblaues Wasser“", "#mittelmeer", "Creator verrät den Ort absichtlich nicht"],
-    candidates: [
-      { place: "Balos-Lagune (Kreta)", country: "Griechenland" },
-      { place: "Cala Macarella (Menorca)", country: "Spanien" },
-      { place: "Ksamil", country: "Albanien" },
-    ],
-    clarifyingQuestion: "Der Creator verrät’s leider nicht 🤫 Welcher dieser Orte könnte es sein – oder weißt du’s?",
-    teaser: "",
-  },
-  cafe: {
-    ...base,
-    status: "not_travel",
-    place: "",
-    region: "",
-    country: "",
-    countryCode: "",
+    country: "Vereinigtes Königreich",
+    countryCode: "GB",
     tripType: "Mix",
+    confidence: 0.55,
+    signals: ["Texteinblendung „England“", "Fachwerkhäuser + Stocherkähne (Canterbury?)", "Staudamm wirkt wie Elan Valley – das wäre Wales", "Mehrere Orte in einem Video"],
+    spots: ["Canterbury", "Elan Valley (Wales)", "Gotisches Universitätsgebäude"],
+    candidates: [
+      { place: "Canterbury", country: "England" },
+      { place: "Elan Valley", country: "Wales" },
+      { place: "Cotswolds", country: "England" },
+    ],
+    clarifyingQuestion: "Das Video zeigt mehrere Orte – und nicht alle liegen in England 😉 Welcher hat’s dir angetan?",
+  },
+  rio: {
+    ...base,
+    place: "Rio de Janeiro",
+    region: "Ipanema & Zuckerhut",
+    country: "Brasilien",
+    countryCode: "BR",
+    nearestAirport: { iata: "GIG", name: "Rio de Janeiro Galeão" },
+    tripType: "Strand",
+    bestMonths: ["Mai", "Juni", "September"],
+    confidence: 0.96,
+    signals: ["Morro Dois Irmãos hinter dem Strand (Ipanema)", "Christusstatue", "Brasilien-Flagge im Text"],
+    spots: ["Ipanema", "Morro Dois Irmãos", "Christus der Erlöser", "Rocinha"],
+    teaser: "Fußball am Strand, Sonnenuntergang über Ipanema – Rio lebt draußen. 🇧🇷",
+  },
+  athen: {
+    ...base,
+    place: "Athen",
+    region: "Attika",
+    country: "Griechenland",
+    countryCode: "GR",
+    nearestAirport: { iata: "ATH", name: "Athen" },
+    tripType: "Kultur",
+    bestMonths: ["April", "Mai", "Oktober"],
+    confidence: 0.98,
+    signals: ["Parthenon und Propyläen", "Texteinblendung „Akropolis“", "Athener Metro + Markthalle"],
+    spots: ["Akropolis", "Parthenon", "Zentrale Markthalle", "Plaka"],
+    teaser: "Morgens Akropolis, mittags Markthalle, abends Plaka – Athen ist der perfekte Städtetrip. 🏛️",
+  },
+};
+
+const CANDIDATE_PRESETS: Record<string, DestinationResult> = {
+  canterbury: {
+    ...base,
+    place: "Canterbury",
+    region: "Kent",
+    country: "England",
+    countryCode: "GB",
+    nearestAirport: { iata: "LGW", name: "London Gatwick, dann ca. 1,5 h" },
+    tripType: "Kultur",
+    bestMonths: ["Mai", "Juni", "September"],
     confidence: 0.85,
-    signals: ["Café/Brunch-Inhalt", "kein Reiseziel erkennbar"],
-    teaser: "",
+    signals: ["Nutzer-Auswahl", "Fachwerkhäuser und Stocherkähne am Fluss Stour"],
+    spots: ["Canterbury Cathedral", "Stocherkahnfahrt auf dem Stour"],
+    teaser: "Fachwerk, Blumen und Stocherkähne – Canterbury ist England wie aus dem Bilderbuch.",
+  },
+  "elan valley": {
+    ...base,
+    place: "Elan Valley",
+    region: "Powys",
+    country: "Wales",
+    countryCode: "GB",
+    nearestAirport: { iata: "BHX", name: "Birmingham, dann ca. 2 h Fahrt" },
+    tripType: "Natur",
+    bestMonths: ["Mai", "Juni", "September"],
+    confidence: 0.8,
+    signals: ["Nutzer-Auswahl", "viktorianische Staumauern mit Überlauf"],
+    spots: ["Caban-Coch-Damm", "Craig-Goch-Damm"],
+    teaser: "Viktorianische Staudämme mitten in grünen Hügeln – Wales von seiner wildesten Seite.",
   },
 };
 
 const KEYWORDS: Array<[RegExp, string]> = [
-  [/ksamil|albani|saranda/i, "ksamil"],
-  [/kotor|montenegro|budva/i, "kotor"],
-  [/navagio|zakynthos|schiffswrack|shipwreck/i, "navagio"],
+  [/mallorca|majorca|sóller|valldemossa/i, "mallorca"],
+  [/shanghai/i, "shanghai"],
+  [/albani/i, "albanien"],
+  [/rio de janeiro|brazil|brasil/i, "rio"],
+  [/athen|athens|akropolis/i, "athen"],
+  [/england|\buk\b/i, "england"],
 ];
-
-const CANDIDATE_PRESETS: Record<string, DestinationResult> = {
-  "balos-lagune (kreta)": {
-    ...base,
-    place: "Balos-Lagune",
-    region: "Westkreta",
-    country: "Griechenland",
-    countryCode: "GR",
-    nearestAirport: { iata: "CHQ", name: "Chania" },
-    bestMonths: ["Mai", "Juni", "September"],
-    confidence: 0.8,
-    signals: ["Nutzer-Auswahl"],
-    teaser: "Flache, türkise Lagune mit rosa schimmerndem Sand im Westen Kretas.",
-  },
-  "cala macarella (menorca)": {
-    ...base,
-    place: "Cala Macarella",
-    region: "Menorca, Balearen",
-    country: "Spanien",
-    countryCode: "ES",
-    nearestAirport: { iata: "MAH", name: "Menorca (Mahón)" },
-    bestMonths: ["Juni", "September"],
-    confidence: 0.8,
-    signals: ["Nutzer-Auswahl"],
-    teaser: "Kleine Bucht mit Pinienwald und glasklarem Wasser – die Postkarte Menorcas.",
-  },
-};
 
 export function fallbackAnalyze(req: AnalyzeRequest): DestinationResult {
   const hint = (req.userHint ?? "").trim().toLowerCase();
   if (hint) {
-    if (CANDIDATE_PRESETS[hint]) return CANDIDATE_PRESETS[hint];
+    for (const key of Object.keys(CANDIDATE_PRESETS)) if (hint.includes(key)) return CANDIDATE_PRESETS[key];
+    if (hint.includes("cotswolds")) return { ...CANDIDATE_PRESETS.canterbury, place: "Cotswolds", region: "Südwestengland", spots: ["Bibury", "Castle Combe"] };
     for (const [re, id] of KEYWORDS) if (re.test(hint)) return PRESETS[id];
   }
   if (req.reelId && PRESETS[req.reelId]) return PRESETS[req.reelId];
-  const text = `${req.caption ?? ""} ${req.locationTag ?? ""} ${req.url ?? ""} ${hint}`;
+  const text = `${req.caption ?? ""} ${req.url ?? ""}`;
   for (const [re, id] of KEYWORDS) if (re.test(text)) return PRESETS[id];
   return {
-    ...PRESETS.turquoise,
-    signals: ["Offline-Modus: ohne API-Key werden nur die Demo-Reels sicher erkannt"],
-    clarifyingQuestion: "Im Offline-Modus erkenne ich nur die Demo-Reels. Welcher Ort könnte es sein?",
+    ...base,
+    status: "ambiguous",
+    confidence: 0.2,
+    signals: ["Offline-Modus: ohne API-Key werden nur die Demo-Reels erkannt"],
+    clarifyingQuestion: "Im Offline-Modus erkenne ich nur die Demo-Reels. Wo ist das denn?",
   };
 }

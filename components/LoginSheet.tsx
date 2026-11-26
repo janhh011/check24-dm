@@ -18,7 +18,7 @@ export default function LoginSheet({ onCancel, onDone }: { onCancel: () => void;
         <strong>{step === 1 ? "Bei CHECK24 anmelden" : "Kurz zu deinen Reiseplänen"}</strong>
         <button onClick={onCancel}>✕</button>
       </div>
-      <div className="webview-url">🔒 kunden.check24.de/connect?src=social-dm · Demo</div>
+      <div className="webview-url">🔒 Demo-Login · kein echtes Konto</div>
 
       {step === 1 ? (
         <div className="login-body">
