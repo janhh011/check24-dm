@@ -88,7 +88,7 @@ function IdeeKI({ last }: { last: LastAnalysis | null }) {
           ))}
           <p className="fc-note">
             <i className="fc-dot" /> CHECK24 heute
-            <i className="fc-dot new" /> möglicher zusätzlicher Einstieg über Social Media. Ergänzt den bestehenden Weg, ersetzt ihn nicht.
+            <i className="fc-dot new" /> möglicher zusätzlicher Einstieg über Social Media
           </p>
         </div>
       </div>
