@@ -50,7 +50,7 @@ export const DEFAULT_PROFILE: UserProfile = {
   origin: "BER",
   month: "Juni",
   travellers: 2,
-  budget: 600,
+  budget: 800,
 };
 
 export function hash(str: string): number {
@@ -94,9 +94,9 @@ export function simulateWeeks(current: number, base: number, weeks: number, seed
   let p = current;
   for (let w = 1; w <= weeks; w++) {
     const r = (hash(`${seed}-${w}-${p}`) % 1000) / 1000; // 0..1
-    const drift = biasDown ? -0.075 : -0.01;
-    const change = drift + (r - 0.5) * 0.08; // ca. -11 % … +3 % pro Woche
-    p = Math.max(Math.round(base * 0.62), Math.round((p * (1 + change)) / 10) * 10 - 1);
+    const drift = biasDown ? -0.11 : -0.01;
+    const change = drift + (r - 0.5) * 0.08; // mit Alarm ca. -15 % … -7 % pro Woche
+    p = Math.max(Math.round(base * 0.55), Math.round((p * (1 + change)) / 10) * 10 - 1);
     out.push(p);
   }
   return out;

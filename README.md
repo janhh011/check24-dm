@@ -1,8 +1,15 @@
-# Reel-to-Trip – inoffizieller Konzept-Prototyp
+# Reel-to-Trip von CHECK24 – Feature-Konzept & Prototyp
 
-**Idee:** Reiseinspiration entsteht im Feed, gebucht wird woanders oder gar nicht. Mit Reel-to-Trip teilt man ein Reise-Reel einfach per Direktnachricht an CHECK24. Die KI erkennt das Ziel direkt aus dem Video, der Bot zeigt ein passendes Angebot, speichert das Ziel auf der Bucket List und meldet sich per Preisalarm, wenn’s günstiger wird.
+> **„Boah, da will ich auch mal hin!“** In diesem Moment ist CHECK24 heute noch nicht dabei.
 
-> Inoffizieller Prototyp von Jan-Hendrik Höltkemeier, keine CHECK24-Seite. **Echt** ist die KI: Bilder aus dem Video ziehen und das Ziel per Claude API erkennen (multimodal, Structured Outputs). **Simuliert** sind Social-App, Login, Preise und Hotelliste.
+Wer heute bei CHECK24 nach einer Reise sucht, hat sich innerlich schon entschieden. Die Inspiration davor passiert auf Social Media, oft Wochen oder Monate vorher und ohne CHECK24. **Reel-to-Trip verschiebt den Einstieg im Funnel nach vorne** und nimmt die Emotion aus dem Feed mit: Reel per DM an CHECK24 teilen, die KI erkennt das Ziel direkt aus dem Video, Preis checken, auf die Bucket List, bis es ins Budget passt. Dann kommt der Push, und gebucht wird bei CHECK24.
+
+```
+Heute:            Inspiration → Wunsch → Sparen → Entscheidung → [CHECK24: Suche → Buchung]
+Mit Reel-to-Trip: [CHECK24: Inspiration → Wunsch → Sparen → Entscheidung → Suche → Buchung]
+```
+
+> Inoffizielles Konzept von Jan-Hendrik Höltkemeier, keine CHECK24-Seite. **Echt** ist die KI: Bilder aus dem Video ziehen und das Ziel per Claude API erkennen (multimodal, Structured Outputs). **Simuliert** sind Social-App, Login, Preise und Hotelliste.
 
 ## Schnellstart
 
@@ -22,12 +29,12 @@ Die sechs Reels (Mallorca, Shanghai, Albanien, England, Rio, Athen) sind **nicht
 ## Demo-Ablauf (ca. 3 Minuten)
 
 1. **Scrollen:** Links läuft ein Reels-Feed wie gewohnt. Kurz durchwischen.
-2. **Teilen:** Bei Mallorca auf **➤ Teilen** tippen, **check24** wählen, **Senden**.
-3. **KI bei der Arbeit:** Im Chat erscheinen live 8 Bilder aus dem Video, die KI liest Texteinblendungen („Caló des Moro“, „Valldemossa“ …) und erkennt Mallorca mit Flughafen PMI und den Spots im Video. Rechts unter **Idee & KI** steht, woran sie das Ziel erkannt hat.
-4. **Bucket List & Alarm:** *Auf Bucket List* tippen, Konto verbinden (Demo), Preisschwelle wählen.
-5. **⏩ 1 Woche vorspulen** (1–3 ×): Der Push kommt, ein Klick öffnet die vorausgefüllte Suche.
-6. **Der Wow-Moment:** Unter *Idee & KI* **„Bildunterschrift mitschicken“ ausschalten** und das Shanghai-Reel teilen. Die KI erkennt Shanghai nur anhand der Skyline (Oriental Pearl Tower, Shanghai Tower).
-7. **Unklarer Fall:** Das England-Reel zeigt Orte in England, Wales und Schottland. Die KI merkt den Widerspruch zur Bildunterschrift und fragt nach, welcher Ort gemeint ist.
+2. **Der Moment:** Beim Shanghai-Reel denkt man „Boah, da will ich hin!“. Also auf **➤ Teilen** tippen, **check24** wählen, **Senden**.
+3. **KI bei der Arbeit:** Im Chat erscheinen live 8 Bilder aus dem Video. Die KI erkennt Shanghai an der Skyline (Oriental Pearl Tower, Shanghai Tower) und zeigt einen Preis. Rechts unter **Idee & KI** steht, woran sie das Ziel erkannt hat.
+4. **Bucket List statt Buchung:** *Auf Bucket List* tippen, Konto verbinden (Demo, Budget 800 €). Der Bot sagt, wie weit das Ziel noch über dem Budget liegt, dann **„Sobald’s in mein Budget passt“** wählen.
+5. **⏩ 1 Woche vorspulen** (2–4 ×): Im Konto füllt sich der Budget-Balken, dann kommt der Push „Dein Traumziel passt jetzt in dein Budget“. Ein Klick öffnet die vorausgefüllte Suche.
+6. **KI-Beweis:** Unter *Idee & KI* „Bildunterschrift mitschicken“ ausschalten und ein weiteres Reel teilen. Die Erkennung klappt auch nur mit Bildern.
+7. **Unklarer Fall:** Das England-Reel zeigt Orte in England, Wales und Schottland. Die KI merkt den Widerspruch zur Bildunterschrift und fragt nach.
 
 ## Wie die KI funktioniert
 

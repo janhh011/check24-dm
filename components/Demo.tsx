@@ -60,7 +60,7 @@ const WELCOME: Msg[] = [
     id: "w1",
     from: "bot",
     kind: "text",
-    text: "Hey 👋 Schick mir einfach ein Reel von einem Ort, an den du willst – ich finde raus, wo das ist, was es kostet, und sag dir Bescheid, wenn’s günstiger wird.",
+    text: "Hey 👋 Du scrollst durch Reels und denkst: „Da will ich auch mal hin!“? Schick mir das Reel – ich sag dir, wo das ist und was es kostet, und behalte den Preis im Blick, bis es in dein Budget passt.",
   },
 ];
 
@@ -320,19 +320,25 @@ export default function Demo() {
       setBucket((prev) => [item, ...prev]);
     }
     const price = existing ? existing.priceHistory[existing.priceHistory.length - 1] : offer.pricePP;
-    const chips: Chip[] = [
+    const overBudget = price - p.budget;
+    const chips: Chip[] = [];
+    if (overBudget > 0) chips.push({ label: `💰 Sobald’s in mein Budget passt (≤ ${formatEUR(p.budget)})`, kind: "threshold", itemId, value: p.budget });
+    chips.push(
       { label: `Unter ${formatEUR(round10(price * 0.9))}`, kind: "threshold", itemId, value: round10(price * 0.9) },
       { label: `Unter ${formatEUR(round10(price * 0.8))}`, kind: "threshold", itemId, value: round10(price * 0.8) },
-    ];
-    if (p.budget < price * 0.8) chips.push({ label: `Unter meinem Budget (${formatEUR(p.budget)})`, kind: "threshold", itemId, value: p.budget });
+    );
     if (!withAlert) chips.push({ label: "Nein, danke", kind: "noAlert" });
 
+    const budgetLine =
+      overBudget > 0
+        ? `Das sind noch ${formatEUR(overBudget)} über deinem Budget – kein Problem, ich behalte den Preis für dich im Blick.`
+        : "Passt sogar schon in dein Budget 🎉";
     push(
       {
         id: uid(),
         from: "bot",
         kind: "text",
-        text: `${existing ? "☝️ Ist schon auf deiner Bucket List" : `✅ ${entry.result.place} ist auf deiner Bucket List`} – aktuell ab ${formatEUR(price)} p. P. (${offer.nights} Nächte, ab ${p.origin}, ${p.month}, ${p.travellers} Pers.). ${withAlert ? "Ab welchem Preis soll ich mich melden?" : "Soll ich dir Bescheid geben, wenn’s günstiger wird?"}`,
+        text: `${existing ? "☝️ Ist schon auf deiner Bucket List" : `✅ ${entry.result.place} ist auf deiner Bucket List`} – aktuell ab ${formatEUR(price)} p. P. (${offer.nights} Nächte, ab ${p.origin}, ${p.month}). ${budgetLine} ${withAlert || overBudget > 0 ? "Wann soll ich mich melden?" : "Soll ich dir Bescheid geben, wenn’s noch günstiger wird?"}`,
       },
       { id: uid("c"), from: "bot", kind: "chips", chips },
     );
@@ -345,7 +351,10 @@ export default function Demo() {
       id: uid(),
       from: "bot",
       kind: "text",
-      text: `🔔 Preisalarm aktiv! Ich melde mich per Push in der CHECK24-App, sobald ${item?.result.place ?? "das Ziel"} unter ${formatEUR(threshold)} fällt. Bis dahin: weiter scrollen 😉`,
+      text:
+        profile && threshold === profile.budget
+          ? `🔔 Abgemacht! Sobald ${item?.result.place ?? "dein Traumziel"} in dein Budget von ${formatEUR(threshold)} passt, bekommst du einen Push von der CHECK24-App. Bis dahin: weiter träumen 😉`
+          : `🔔 Preisalarm aktiv! Ich melde mich per Push in der CHECK24-App, sobald ${item?.result.place ?? "das Ziel"} unter ${formatEUR(threshold)} fällt. Bis dahin: weiter scrollen 😉`,
     });
   }
 
@@ -376,7 +385,10 @@ export default function Demo() {
           id: uid("n"),
           itemId: b.id,
           title: "CHECK24 Urlaub",
-          body: `🔔 ${b.result.place} jetzt ab ${formatEUR(p)} p. P. (−${pct} %). Dein Preisalarm hat ausgelöst – jetzt ansehen!`,
+          body:
+            profile && b.alert.threshold === profile.budget
+              ? `🎉 Dein Traumziel ${b.result.place} passt jetzt in dein Budget: ab ${formatEUR(p)} p. P. (−${pct} %). Jetzt ansehen!`
+              : `🔔 ${b.result.place} jetzt ab ${formatEUR(p)} p. P. (−${pct} %). Dein Preisalarm hat ausgelöst – jetzt ansehen!`,
         });
       }
       return updated;
@@ -428,8 +440,8 @@ export default function Demo() {
           <span className="wordmark">CHECK24</span>
           <span className="divider" />
           <span className="product">Reel-to-Trip</span>
-          <span className="badge-concept">Konzept</span>
-          <span className="byline">Inoffizieller Prototyp von Jan-Hendrik Höltkemeier</span>
+          <span className="badge-concept">Feature-Konzept</span>
+          <span className="byline">Konzept & Prototyp: Jan-Hendrik Höltkemeier · inoffiziell</span>
         </div>
         <div className="controls">
           <span className={`mode ${mode?.mode === "claude" ? "mode-live" : "mode-offline"}`}>

@@ -7,6 +7,8 @@ import type { LastAnalysis } from "./Demo";
 
 type Tab = "ki" | "konto" | "log";
 
+const FUNNEL = ["💭 Inspiration", "❤️ Wunsch", "💰 Sparen", "✅ Entscheidung", "🔍 Suche", "✈️ Buchung"];
+
 export default function AccountPanel({
   profile,
   bucket,
@@ -63,21 +65,32 @@ function IdeeKI({ last, useCaption, onToggleCaption }: { last: LastAnalysis | nu
   return (
     <div className="idea">
       <div className="idea-hero">
-        <h2>Vom Reel zur Reise – mit einem Tipp</h2>
+        <span className="idea-kicker">Reel-to-Trip von CHECK24</span>
+        <h2>„Boah, da will ich auch mal hin!“</h2>
         <p>
-          Reiseinspiration entsteht heute im Feed – gebucht wird woanders, oder gar nicht. <strong>Reel-to-Trip</strong> schließt die Lücke: Reel an
-          CHECK24 schicken, die KI erkennt das Ziel, und aus dem gespeicherten Video wird ein Angebot mit Preisalarm.
+          Genau in diesem Moment ist CHECK24 heute noch nicht dabei. Wer bei uns sucht, hat sich innerlich längst entschieden. Reel-to-Trip holt
+          Kund:innen <strong>schon bei der Inspiration</strong> ab – mit der Emotion aus dem Feed: Reel teilen, Preis checken, auf die Bucket List, bis es
+          ins Budget passt.
         </p>
-        <div className="idea-flow">
-          <span>🎬 Reel teilen</span>
-          <b>→</b>
-          <span>🧠 KI erkennt Ziel</span>
-          <b>→</b>
-          <span>⭐ Bucket List</span>
-          <b>→</b>
-          <span>🔔 Preisalarm</span>
-          <b>→</b>
-          <span>✈️ Buchen</span>
+        <div className="funnel-compare">
+          {[
+            { label: "Heute", from: 4 },
+            { label: "Mit Reel-to-Trip", from: 0 },
+          ].map((row) => (
+            <div key={row.label} className="fc-row">
+              <span className="fc-label">{row.label}</span>
+              <div className="fc-stages">
+                {FUNNEL.map((st, i) => (
+                  <span key={st} className={`fc-stage ${i >= row.from ? "c24" : ""} ${i === row.from ? "entry" : ""}`}>
+                    {st}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+          <p className="fc-note">
+            <i className="fc-dot" /> CHECK24 ist dabei. Früher Zugang = mehr Kontaktpunkte, Daten zu Wunschzielen und Buchungen, die sonst woanders landen.
+          </p>
         </div>
       </div>
 
@@ -233,6 +246,7 @@ function Konto({ profile, bucket, week, onOpenItem }: { profile: UserProfile | n
                     {b.result.country}
                     {b.result.nearestAirport ? ` · ✈️ ${b.result.nearestAirport.iata}` : ""}
                   </span>
+                  {profile && <BudgetBar price={cur} budget={profile.budget} />}
                   <span className="bucket-alert">
                     {b.alert ? (
                       b.alert.triggered ? (
@@ -260,6 +274,20 @@ function Konto({ profile, bucket, week, onOpenItem }: { profile: UserProfile | n
         </div>
       )}
     </div>
+  );
+}
+
+/** Zeigt, wie weit ein Traumziel noch vom eigenen Budget entfernt ist. */
+function BudgetBar({ price, budget }: { price: number; budget: number }) {
+  const fits = price <= budget;
+  const pct = Math.min(100, Math.round((budget / price) * 100));
+  return (
+    <span className={`budget ${fits ? "fits" : ""}`}>
+      <span className="budget-track">
+        <span style={{ width: `${fits ? 100 : pct}%` }} />
+      </span>
+      <small>{fits ? "✅ passt in dein Budget" : `💰 noch ${formatEUR(price - budget)} über Budget`}</small>
+    </span>
   );
 }
 

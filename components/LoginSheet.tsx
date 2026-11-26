@@ -65,7 +65,7 @@ export default function LoginSheet({ onCancel, onDone }: { onCancel: () => void;
             <button onClick={() => setP({ ...p, travellers: Math.min(6, p.travellers + 1) })}>+</button>
           </div>
           <div className="onb-label">
-            Budget pro Person: <strong>{formatEUR(p.budget)}</strong>
+            Was darf die Reise pro Person kosten? <strong>{formatEUR(p.budget)}</strong>
           </div>
           <input type="range" min={300} max={1500} step={50} value={p.budget} onChange={(e) => setP({ ...p, budget: Number(e.target.value) })} />
           <button className="btn btn-blue wide" onClick={() => onDone(p)}>
