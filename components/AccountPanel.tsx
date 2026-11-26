@@ -161,12 +161,12 @@ function IdeeKI({ last }: { last: LastAnalysis | null }) {
         <div>
           <span className="step-n">1</span>
           <strong>Video in Bilder zerlegen</strong>
-          <p>8 Einzelbilder, gleichmäßig über das Video verteilt. Im Produkt per Worker mit Szenenwechsel-Erkennung plus Audio-Transkript.</p>
+          <p>8 Einzelbilder, gleichmäßig über das Video verteilt.</p>
         </div>
         <div>
           <span className="step-n">2</span>
           <strong>Multimodal verstehen</strong>
-          <p>Claude liest Texteinblendungen, erkennt Wahrzeichen und Landschaften und gleicht alles mit der Bildunterschrift ab, inklusive Widersprüchen.</p>
+          <p>Claude liest Texteinblendungen, erkennt Wahrzeichen und Landschaften und gleicht alles mit der Bildunterschrift ab.</p>
         </div>
         <div>
           <span className="step-n">3</span>
