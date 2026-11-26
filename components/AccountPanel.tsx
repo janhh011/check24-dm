@@ -33,7 +33,10 @@ export default function AccountPanel({
   }, [bucket.length]);
 
   return (
-    <section className="panel">
+    <section className="panel" id="idee">
+      <button className="mobile-back" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+        ▲ Zurück zur Demo
+      </button>
       <nav className="tabs">
         <button className={tab === "ki" ? "on" : ""} onClick={() => setTab("ki")}>
           Idee & KI
@@ -96,7 +99,7 @@ function IdeeKI({ last }: { last: LastAnalysis | null }) {
       {!last ? (
         <div className="empty small-empty">
           <p>
-            Teile links ein Reel an <strong>check24</strong>. Hier siehst du dann live, welche Bilder die KI aus dem Video zieht und woran sie das Ziel erkennt.
+            Teile im Reels-Feed ein Reel an <strong>check24</strong>. Hier siehst du dann live, welche Bilder die KI aus dem Video zieht und woran sie das Ziel erkennt.
           </p>
         </div>
       ) : (
@@ -214,7 +217,7 @@ function Konto({ profile, bucket, week, onOpenItem }: { profile: UserProfile | n
         <div className="empty">
           <div className="empty-emoji">🧳</div>
           <p>
-            Noch leer. Teile links ein Reel an <strong>check24</strong> und tippe auf <strong>Auf Bucket List</strong>.
+            Noch leer. Teile im Reels-Feed ein Reel an <strong>check24</strong> und tippe auf <strong>Auf Bucket List</strong>.
           </p>
         </div>
       ) : (

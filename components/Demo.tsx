@@ -505,6 +505,15 @@ export default function Demo() {
           <p className="phone-caption">
             {screen === "feed" ? "Scrollen wie gewohnt. Traumziel gefunden? ➤ Teilen an check24" : "Kundensicht: Direktnachricht an den CHECK24-Account"}
           </p>
+          {/* Nur auf dem Smartphone: Hinweis, dass darunter die Erklärung kommt. Hier wischen scrollt die Seite, nicht den Feed. */}
+          <button className="mobile-more" onClick={() => document.getElementById("idee")?.scrollIntoView({ behavior: "smooth" })}>
+            <span className="mobile-more-arrow">⌄</span>
+            <span>
+              <strong>Idee & KI dahinter</strong>
+              <small>Hier nach unten wischen</small>
+            </span>
+            <span className="mobile-more-arrow">⌄</span>
+          </button>
         </section>
 
         {/* ---------- Konto & KI ---------- */}
